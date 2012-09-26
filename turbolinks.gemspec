@@ -5,5 +5,9 @@ Gem::Specification.new do |s|
   s.email   = 'david@loudthinking.com'
   s.summary = 'Turbolinks makes following links in your web application faster (use with Rails Asset Pipeline)'
 
-  s.files = Dir["lib/assets/javascripts/*.js.coffee", "lib/turbolinks.rb", "README.md", "MIT-LICENSE", "test/*"]
+  s.files = ["lib/turbolinks.rb", "lib/assets/javascripts/turbolinks.js", "README.md", "MIT-LICENSE"] +
+            Dir["test/*"]
+  
+  s.add_development_dependency 'rack'
+  s.add_development_dependency 'sprockets'
 end

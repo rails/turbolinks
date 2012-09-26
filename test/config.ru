@@ -1,5 +1,4 @@
 require 'sprockets'
-require 'coffee-script'
 
 Root = File.expand_path("../..", __FILE__)
 
