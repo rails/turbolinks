@@ -90,6 +90,8 @@ browserSupportsPushState = window.history and window.history.pushState and windo
 
 
 if browserSupportsPushState
+  initialize()
+
   window.addEventListener 'popstate', (event) ->
     if event.state?.turbolinks
       fetchReplacement document.location.href
@@ -97,7 +99,6 @@ if browserSupportsPushState
   document.addEventListener 'click', (event) ->
     handleClick event
 
-initialize()
 
 # Call Turbolinks.visit(url) from client code
 @Turbolinks = { visit: visit }
