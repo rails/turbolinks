@@ -27,9 +27,7 @@ triggerPageChange = ->
 
 replaceHTML = (html) ->
   doc = document.implementation.createHTMLDocument ""
-  doc.open "replace"
-  doc.write html
-  doc.close()
+  doc.documentElement.innerHTML = html.replace(/^[\S\s]*?<html\b/i, '<html');
 
   originalBody = document.body
   document.documentElement.appendChild doc.body, originalBody
