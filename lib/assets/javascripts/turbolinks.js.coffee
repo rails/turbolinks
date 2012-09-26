@@ -5,6 +5,8 @@ visit = (url) ->
   else
     document.location.href = url
 
+initialize = ->
+  window.history.replaceState { turbolinks: true }, "", document.location.href
 
 fetchReplacement = (url) ->
   xhr = new XMLHttpRequest
@@ -94,6 +96,8 @@ if browserSupportsPushState
 
   document.addEventListener 'click', (event) ->
     handleClick event
+
+initialize()
 
 # Call Turbolinks.visit(url) from client code
 @Turbolinks = { visit: visit }
