@@ -9,5 +9,4 @@ Gem::Specification.new do |s|
             Dir["test/*"]
   
   s.add_development_dependency 'rack'
-  s.add_development_dependency 'sprockets'
 end
