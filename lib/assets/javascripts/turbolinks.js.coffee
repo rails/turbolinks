@@ -53,11 +53,16 @@ anchoredLink = (link) ->
 noTurbolink = (link) ->
   link.getAttribute('data-no-turbolink')?
 
+invalidExtension = (link) ->
+  return false unless link.href.match /\.[a-z]+$/g
+  return false if link.href.match /\.html?$/g
+  return true
+
 newTabClick = (event) ->
   event.which > 1 || event.metaKey || event.ctrlKey
 
 ignoreClick = (event, link) ->
-  crossOriginLink(link) || anchoredLink(link) || noTurbolink(link) || newTabClick(event)
+  crossOriginLink(link) || anchoredLink(link) || noTurbolink(link) || newTabClick(event) || invalidExtension(link)
 
 handleClick = (event) ->
   link = extractLink event
