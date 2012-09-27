@@ -5,7 +5,7 @@ Turbolinks makes following links in your web application faster. Instead of lett
 
 This is similar to pjax, but instead of worrying about what element on the page to replace, and tailoring the server-side response to fit, we replace the entire body. This means that you get the bulk of the speed benefits from pjax (no recompiling of the JavaScript or CSS) without having to tailor the server-side response. It just works.
 
-By default, all internal links will be funneled through Turbolinks, but you can opt out by marking links with data-no-turbolink.
+By default, all internal links will be funneled through Turbolinks, but you can opt out by marking links with data-no-turbolink. Additionally, links with data-remote will also be skipped as this will cause the request to be made with an unexpected Accept header (HTML instead of JS).
 
 
 No jQuery or any other framework
