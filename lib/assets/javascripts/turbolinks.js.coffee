@@ -1,3 +1,5 @@
+window.historyCache = []
+window.testArray = []
 visit = (url) ->
   if browserSupportsPushState?
     reflectNewUrl url
@@ -13,6 +15,16 @@ fetchReplacement = (url) ->
   xhr.onload  = -> fullReplacement xhr.responseText, url
   xhr.onabort = -> console.log "Aborted turbolink fetch!"
   xhr.send()
+
+fetchHistory = (url) ->
+  while(window.historyCache.length > 0)
+    cache = window.historyCache.pop()
+    if cache.url == url
+      replaceDocument cache.body, cache.title
+      triggerPageChange
+      return
+
+  fetchReplacement url
 
 fullReplacement = (html, url) ->
   replaceHTML html
@@ -47,10 +59,16 @@ createDocument = do ->
 
 replaceHTML = (html) ->
   doc = createDocument html
+  title = doc.querySelector "title"
+  replaceDocument doc.body,title?.textContent, 'cache'
+
+
+replaceDocument = (body,title,cache) ->
   originalBody = document.body
-  document.documentElement.appendChild doc.body, originalBody
+  document.documentElement.appendChild body.cloneNode(true), originalBody
   document.documentElement.removeChild originalBody
-  document.title = title.textContent if title = doc.querySelector "title"
+  document.title = title
+  window.historyCache.push({url: document.location.href, title:title,body:body}) if cache
 
 
 extractLink = (event) ->
@@ -93,10 +111,10 @@ rememberInitialPage = ->
 
 if browserSupportsPushState
   rememberInitialPage()
-  
+
   window.addEventListener 'popstate', (event) ->
     if event.state?.turbolinks
-      fetchReplacement document.location.href
+      fetchHistory document.location.href
 
   document.addEventListener 'click', (event) ->
     handleClick event
