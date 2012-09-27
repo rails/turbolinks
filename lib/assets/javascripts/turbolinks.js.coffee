@@ -96,7 +96,7 @@ nonHtmlLink = (link) ->
   link.href.match(/\.[a-z]+$/g) and not link.href.match(/\.html?$/g)
 
 noTurbolink = (link) ->
-  link.getAttribute('data-no-turbolink')?
+  link.getAttribute('data-no-turbolink')? or link.getAttribute('data-remote')?
 
 newTabClick = (event) ->
   event.which > 1 or event.metaKey or event.ctrlKey
