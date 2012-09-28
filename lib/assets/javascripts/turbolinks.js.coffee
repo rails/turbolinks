@@ -91,7 +91,8 @@ extractTitleAndBody = (html) ->
 
 createDocument = do ->
   createDocumentUsingParser = (html) ->
-    (new DOMParser).parseFromString html, 'text/html'
+    try
+      (new DOMParser).parseFromString html, 'text/html'
 
   createDocumentUsingWrite = (html) ->
     doc = document.implementation.createHTMLDocument ''
