@@ -89,9 +89,10 @@ extractTitleAndBody = (html) ->
   title = doc.querySelector 'title'
   [ title?.textContent, doc.body ]
 
-createDocument = do ->
+createDocument = (html) ->
   createDocumentUsingParser = (html) ->
-    (new DOMParser).parseFromString html, 'text/html'
+    try
+      (new DOMParser).parseFromString html, 'text/html'
 
   createDocumentUsingWrite = (html) ->
     doc = document.implementation.createHTMLDocument ''
@@ -104,17 +105,25 @@ createDocument = do ->
     testDoc = createDocumentUsingParser '<html><body><p>test'
 
   if testDoc?.body?.childNodes.length is 1
-    createDocumentUsingParser
+    createDocument = createDocumentUsingParser
   else
-    createDocumentUsingWrite
+    createDocument = createDocumentUsingWrite
 
+  createDocument html
 
 handleClick = (event) ->
-  link = extractLink event
+  unless event.defaultPrevented
+    document.removeEventListener 'click', handleAfterClick
+    document.addEventListener 'click', handleAfterClick
 
-  if link.nodeName is 'A' and !ignoreClick(event, link)
-    visit link.href
-    event.preventDefault()
+handleAfterClick = (event) ->
+  unless event.defaultPrevented
+    link = extractLink event
+    if link.nodeName is 'A' and !ignoreClick(event, link)
+      link = extractLink event
+      visit link.href
+      event.preventDefault()
+
 
 extractLink = (event) ->
   link = event.target
@@ -145,7 +154,7 @@ newTabClick = (event) ->
 
 ignoreClick = (event, link) ->
   samePageLink(link) or crossOriginLink(link) or anchoredLink(link) or
-  nonHtmlLink(link)  or remoteLink(link)      or noTurbolink(link)  or 
+  nonHtmlLink(link)  or remoteLink(link)      or noTurbolink(link)  or
   newTabClick(event)
 
 
@@ -156,8 +165,7 @@ if browserSupportsPushState
   window.addEventListener 'popstate', (event) ->
     fetchHistory event.state if event.state?.turbolinks
 
-  document.addEventListener 'click', (event) ->
-    handleClick event
+  document.addEventListener 'click', handleClick,true
 
 # Call Turbolinks.visit(url) from client code
 @Turbolinks = {visit}
