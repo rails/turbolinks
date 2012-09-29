@@ -18,7 +18,7 @@ fetchReplacement = (url) ->
   xhr.open 'GET', url, true
   xhr.setRequestHeader 'Accept', 'text/html, application/xhtml+xml, application/xml'
   xhr.onload  = ->
-    changePage extractTitleAndBody(xhr.responseText)...
+    changePage extractTitleAndBody(xhr.responseText)..., window.history.length
     triggerEvent 'page:load'
   xhr.onabort = -> console.log 'Aborted turbolink fetch!'
   xhr.send()
@@ -27,7 +27,7 @@ fetchHistory = (state) ->
   cacheCurrentPage()
 
   if page = pageCache[state.position]
-    changePage page.title, page.body.cloneNode(true)
+    changePage page.title, page.body.cloneNode(true), state.position
     recallScrollPosition page
     triggerEvent 'page:restore'
   else
@@ -49,12 +49,13 @@ cacheCurrentPage = ->
 constrainPageCacheTo = (limit) ->
   delete pageCache[currentState.position - limit] if currentState.position == window.history.length - 1
 
-
-changePage = (title, body) ->
+changePage = (title, body, position) ->
   document.title = title
   document.documentElement.replaceChild body, document.body
-
-  currentState = window.history.state
+  if window.history.state?
+    currentState = window.history.state
+  else
+    currentState = { turbolinks: true, position: position }
   triggerEvent 'page:change'
 
 
@@ -66,7 +67,10 @@ rememberCurrentUrl = ->
   window.history.replaceState { turbolinks: true, position: window.history.length - 1 }, '', document.location.href
 
 rememberCurrentState = ->
-  currentState = window.history.state
+  if window.history.state?
+    currentState = window.history.state
+  else
+    currentState = { turbolinks: true, position: window.history.length - 1 }
 
 rememberInitialPage = ->
   unless initialized
