@@ -5,7 +5,6 @@ initialized  = false
 visit = (url) ->
   if browserSupportsPushState
     cacheCurrentPage()
-    reflectNewUrl url
     currentState = incrementState()
     fetchReplacement url
   else
@@ -19,6 +18,7 @@ fetchReplacement = (url) ->
   xhr.open 'GET', url, true
   xhr.setRequestHeader 'Accept', 'text/html, application/xhtml+xml, application/xml'
   xhr.onload  = ->
+    reflectNewUrl url
     changePage extractTitleAndBody(xhr.responseText)...
     triggerEvent 'page:load'
   xhr.onabort = -> console.log 'Aborted turbolink fetch!'
