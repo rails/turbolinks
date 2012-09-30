@@ -5,13 +5,12 @@ initialized  = false
 visit = (url) ->
   if browserSupportsPushState
     cacheCurrentPage()
-    currentState = incrementState()
     fetchReplacement url
   else
     document.location.href = url
 
 
-fetchReplacement = (url) ->
+fetchReplacement = (url, state) ->
   triggerEvent 'page:fetch'
 
   xhr = new XMLHttpRequest
@@ -20,6 +19,7 @@ fetchReplacement = (url) ->
   xhr.onload  = ->
     reflectNewUrl url
     changePage extractTitleAndBody(xhr.responseText)...
+    updateCurrentState state
     triggerEvent 'page:load'
   xhr.onabort = -> console.log 'Aborted turbolink fetch!'
   xhr.send()
@@ -29,11 +29,11 @@ fetchHistory = (state) ->
 
   if page = pageCache[state.position]
     changePage page.title, page.body.cloneNode(true)
-    currentState = stateFromEvent(state)
+    restoreCurrentStateTo state
     recallScrollPosition page
     triggerEvent 'page:restore'
   else
-    fetchReplacement document.location.href
+    fetchReplacement document.location.href, state
 
 
 cacheCurrentPage = ->
@@ -61,13 +61,16 @@ reflectNewUrl = (url) ->
   if url isnt document.location.href
     window.history.pushState { turbolinks: true, position: currentState.position + 1 }, '', url
 
-stateFromEvent = (state) ->
-    window.history.state or { turbolinks: true, position: state.position }
+updateCurrentState = (state) ->
+  if state? then restoreCurrentStateTo state else moveCurrentStateForward()
 
-incrementState = ->
-    window.history.state or { turbolinks: true, position: currentState.position + 1 }
+restoreCurrentStateTo = (state) ->
+  currentState = window.history.state or { turbolinks: true, position: state.position }
 
-rememberInitialPage = ->  
+moveCurrentStateForward = ->
+  currentState = window.history.state or { turbolinks: true, position: currentState.position + 1 }
+
+rememberInitialPage = ->
   rememberInitialUrl()
   rememberInitialState()
   initialized = true
