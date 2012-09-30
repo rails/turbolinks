@@ -5,20 +5,21 @@ initialized  = false
 visit = (url) ->
   if browserSupportsPushState
     cacheCurrentPage()
-    reflectNewUrl url
     fetchReplacement url
   else
     document.location.href = url
 
 
-fetchReplacement = (url) ->
+fetchReplacement = (url, state) ->
   triggerEvent 'page:fetch'
 
   xhr = new XMLHttpRequest
   xhr.open 'GET', url, true
   xhr.setRequestHeader 'Accept', 'text/html, application/xhtml+xml, application/xml'
   xhr.onload  = ->
+    reflectNewUrl url
     changePage extractTitleAndBody(xhr.responseText)...
+    updateCurrentState state
     triggerEvent 'page:load'
   xhr.onabort = -> console.log 'Aborted turbolink fetch!'
   xhr.send()
@@ -28,14 +29,15 @@ fetchHistory = (state) ->
 
   if page = pageCache[state.position]
     changePage page.title, page.body.cloneNode(true)
+    restoreCurrentStateTo state
     recallScrollPosition page
     triggerEvent 'page:restore'
   else
-    fetchReplacement document.location.href
+    fetchReplacement document.location.href, state
 
 
 cacheCurrentPage = ->
-  rememberInitialPage()
+  rememberInitialPage() unless initialized
 
   pageCache[currentState.position] =
     url:       document.location.href,
@@ -49,12 +51,9 @@ cacheCurrentPage = ->
 constrainPageCacheTo = (limit) ->
   delete pageCache[currentState.position - limit] if currentState.position == window.history.length - 1
 
-
 changePage = (title, body) ->
   document.title = title
   document.documentElement.replaceChild body, document.body
-
-  currentState = window.history.state
   triggerEvent 'page:change'
 
 
@@ -62,17 +61,25 @@ reflectNewUrl = (url) ->
   if url isnt document.location.href
     window.history.pushState { turbolinks: true, position: currentState.position + 1 }, '', url
 
-rememberCurrentUrl = ->
-  window.history.replaceState { turbolinks: true, position: window.history.length - 1 }, '', document.location.href
+updateCurrentState = (state) ->
+  if state? then restoreCurrentStateTo state else moveCurrentStateForward()
 
-rememberCurrentState = ->
-  currentState = window.history.state
+restoreCurrentStateTo = (state) ->
+  currentState = window.history.state or { turbolinks: true, position: state.position }
+
+moveCurrentStateForward = ->
+  currentState = window.history.state or { turbolinks: true, position: currentState.position + 1 }
 
 rememberInitialPage = ->
-  unless initialized
-    rememberCurrentUrl()
-    rememberCurrentState()
-    initialized = true
+  rememberInitialUrl()
+  rememberInitialState()
+  initialized = true
+
+rememberInitialUrl = ->
+  window.history.replaceState { turbolinks: true, position: window.history.length - 1 }, '', document.location.href
+
+rememberInitialState = ->
+  currentState = window.history.state or { turbolinks: true, position: window.history.length - 1 }
 
 recallScrollPosition = (page) ->
   window.scrollTo page.positionX, page.positionY
@@ -144,9 +151,8 @@ newTabClick = (event) ->
   event.which > 1 or event.metaKey or event.ctrlKey
 
 ignoreClick = (event, link) ->
-  samePageLink(link) or crossOriginLink(link) or anchoredLink(link) or
-  nonHtmlLink(link)  or remoteLink(link)      or noTurbolink(link)  or 
-  newTabClick(event)
+  crossOriginLink(link) or anchoredLink(link) or nonHtmlLink(link) or 
+  remoteLink(link)      or noTurbolink(link)  or newTabClick(event)
 
 
 browserSupportsPushState =
