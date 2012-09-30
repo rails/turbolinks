@@ -18,7 +18,7 @@ fetchReplacement = (url) ->
   xhr.open 'GET', url, true
   xhr.setRequestHeader 'Accept', 'text/html, application/xhtml+xml, application/xml'
   xhr.onload  = ->
-    changePage extractTitleAndBody(xhr.responseText)..., window.history.length
+    changePage extractTitleAndBody(xhr.responseText)..., currentState.position + 1
     triggerEvent 'page:load'
   xhr.onabort = -> console.log 'Aborted turbolink fetch!'
   xhr.send()
