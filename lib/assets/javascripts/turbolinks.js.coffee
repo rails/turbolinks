@@ -35,7 +35,7 @@ fetchHistory = (state) ->
 
 
 cacheCurrentPage = ->
-  rememberInitialPage()
+  rememberInitialPage() unless initialized
 
   pageCache[currentState.position] =
     url:       document.location.href,
@@ -63,20 +63,17 @@ reflectNewUrl = (url) ->
   if url isnt document.location.href
     window.history.pushState { turbolinks: true, position: currentState.position + 1 }, '', url
 
-rememberCurrentUrl = ->
+
+rememberInitialPage = ->  
+  rememberInitialUrl()
+  rememberInitialState()
+  initialized = true
+
+rememberInitialUrl = ->
   window.history.replaceState { turbolinks: true, position: window.history.length - 1 }, '', document.location.href
 
-rememberCurrentState = ->
-  if window.history.state?
-    currentState = window.history.state
-  else
-    currentState = { turbolinks: true, position: window.history.length - 1 }
-
-rememberInitialPage = ->
-  unless initialized
-    rememberCurrentUrl()
-    rememberCurrentState()
-    initialized = true
+rememberInitialState = ->
+  currentState = window.history.state or { turbolinks: true, position: window.history.length - 1 }
 
 recallScrollPosition = (page) ->
   window.scrollTo page.positionX, page.positionY
