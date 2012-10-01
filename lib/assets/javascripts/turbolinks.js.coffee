@@ -48,8 +48,7 @@ cacheCurrentPage = ->
   constrainPageCacheTo(10)
 
 constrainPageCacheTo = (limit) ->
-  delete pageCache[currentState.position - limit] if currentState.position == window.history.length - 1
-
+  delete pageCache[currentState.position - limit]
 
 changePage = (title, body) ->
   document.title = title
