@@ -1,6 +1,7 @@
 pageCache    = []
 currentState = null
 initialized  = false
+historyState = null
 
 visit = (url) ->
   if browserSupportsPushState
@@ -53,19 +54,19 @@ changePage = (title, body) ->
   document.title = title
   document.documentElement.replaceChild body, document.body
 
-  currentState = window.history.state
+  currentState = historyState
   triggerEvent 'page:change'
 
 
 reflectNewUrl = (url) ->
   if url isnt document.location.href
-    window.history.pushState { turbolinks: true, position: currentState.position + 1 }, '', url
+    historyPushState { turbolinks: true, position: currentState.position + 1 }, '', url
 
 rememberCurrentUrl = ->
-  window.history.replaceState { turbolinks: true, position: window.history.length - 1 }, '', document.location.href
+  historyReplaceState { turbolinks: true, position: window.history.length - 1 }, '', document.location.href
 
 rememberCurrentState = ->
-  currentState = window.history.state
+  currentState = historyState
 
 rememberInitialPage = ->
   unless initialized
@@ -107,13 +108,19 @@ createDocument = do ->
   else
     createDocumentUsingWrite
 
-
 handleClick = (event) ->
-  link = extractLink event
+  unless event.defaultPrevented
+    document.removeEventListener 'click', handleAfterClick
+    document.addEventListener 'click', handleAfterClick
 
-  if link.nodeName is 'A' and !ignoreClick(event, link)
-    visit link.href
-    event.preventDefault()
+handleAfterClick = (event) ->
+  unless event.defaultPrevented
+    link = extractLink event
+    if link.nodeName is 'A' and !ignoreClick(event, link)
+      link = extractLink event
+      visit link.href
+      event.preventDefault()
+
 
 extractLink = (event) ->
   link = event.target
@@ -147,16 +154,23 @@ ignoreClick = (event, link) ->
   nonHtmlLink(link)  or remoteLink(link)      or noTurbolink(link)  or
   nonStandardClick(event)
 
+historyReplaceState = (state, title, url) ->
+  window.history.replaceState state, title, url
+  historyState = state
+
+historyPushState = (state, title, url) ->
+  window.history.pushState state, title, url
+  historyState = state
 
 browserSupportsPushState =
   window.history and window.history.pushState and window.history.replaceState
 
 if browserSupportsPushState
   window.addEventListener 'popstate', (event) ->
+    historyState = event.state
     fetchHistory event.state if event.state?.turbolinks
 
-  document.addEventListener 'click', (event) ->
-    handleClick event
+  document.addEventListener 'click', handleClick,true
 
 # Call Turbolinks.visit(url) from client code
 @Turbolinks = {visit}
