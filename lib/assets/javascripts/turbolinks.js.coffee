@@ -1,6 +1,8 @@
 pageCache    = []
 currentState = null
 initialized  = false
+referer      = document.location.href
+
 
 visit = (url) ->
   if browserSupportsPushState
@@ -13,15 +15,20 @@ visit = (url) ->
 
 fetchReplacement = (url) ->
   triggerEvent 'page:fetch'
-
   xhr = new XMLHttpRequest
   xhr.open 'GET', url, true
   xhr.setRequestHeader 'Accept', 'text/html, application/xhtml+xml, application/xml'
+  xhr.setRequestHeader 'X-XHR-Referer', referer
   xhr.onload  = ->
     changePage extractTitleAndBody(xhr.responseText)...
+    checkHeaders xhr
     triggerEvent 'page:load'
   xhr.onabort = -> console.log 'Aborted turbolink fetch!'
   xhr.send()
+
+checkHeaders = (xhr) ->
+  if(location = xhr.getResponseHeader('X-XHR-Location'))
+    window.history.replaceState currentState, '', location
 
 fetchHistory = (state) ->
   cacheCurrentPage()
@@ -59,6 +66,7 @@ changePage = (title, body) ->
 
 reflectNewUrl = (url) ->
   if url isnt document.location.href
+    referer = document.location.href
     window.history.pushState { turbolinks: true, position: currentState.position + 1 }, '', url
 
 rememberCurrentUrl = ->
@@ -107,13 +115,19 @@ createDocument = do ->
   else
     createDocumentUsingWrite
 
-
 handleClick = (event) ->
-  link = extractLink event
+  unless event.defaultPrevented
+    document.removeEventListener 'click', handleAfterClick
+    document.addEventListener 'click', handleAfterClick
 
-  if link.nodeName is 'A' and !ignoreClick(event, link)
-    visit link.href
-    event.preventDefault()
+handleAfterClick = (event) ->
+  unless event.defaultPrevented
+    link = extractLink event
+    if link.nodeName is 'A' and !ignoreClick(event, link)
+      link = extractLink event
+      visit link.href
+      event.preventDefault()
+
 
 extractLink = (event) ->
   link = event.target
@@ -158,8 +172,7 @@ if browserSupportsPushState
   window.addEventListener 'popstate', (event) ->
     fetchHistory event.state if event.state?.turbolinks
 
-  document.addEventListener 'click', (event) ->
-    handleClick event
+  document.addEventListener 'click', handleClick,true
 
 # Call Turbolinks.visit(url) from client code
 @Turbolinks = {visit}
