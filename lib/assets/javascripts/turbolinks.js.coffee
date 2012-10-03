@@ -1,6 +1,9 @@
-pageCache    = []
-currentState = null
-initialized  = false
+initialized    = false
+currentState   = null
+referer        = document.location.href
+assets         = []
+pageCache      = []
+createDocument = null
 
 visit = (url) ->
   if browserSupportsPushState
@@ -17,17 +20,28 @@ fetchReplacement = (url) ->
   xhr = new XMLHttpRequest
   xhr.open 'GET', url, true
   xhr.setRequestHeader 'Accept', 'text/html, application/xhtml+xml, application/xml'
-  xhr.onload  = ->
-    changePage extractTitleAndBody(xhr.responseText)...
-    triggerEvent 'page:load'
+  xhr.setRequestHeader 'X-XHR-Referer', referer
+
+  xhr.onload = =>
+    doc = createDocument xhr.responseText
+
+    if assetsChanged doc
+      document.location.href = url
+    else
+      changePage extractTitleAndBody(doc)...
+      reflectRedirectedUrl xhr
+      resetScrollPosition()
+      triggerEvent 'page:load'
+
   xhr.onabort = -> console.log 'Aborted turbolink fetch!'
+
   xhr.send()
 
 fetchHistory = (state) ->
   cacheCurrentPage()
 
   if page = pageCache[state.position]
-    changePage page.title, page.body.cloneNode(true)
+    changePage page.title, page.body
     recallScrollPosition page
     triggerEvent 'page:restore'
   else
@@ -47,20 +61,27 @@ cacheCurrentPage = ->
   constrainPageCacheTo(10)
 
 constrainPageCacheTo = (limit) ->
-  delete pageCache[currentState.position - limit] if currentState.position == window.history.length - 1
-
+  delete pageCache[currentState.position - limit]
 
 changePage = (title, body) ->
   document.title = title
   document.documentElement.replaceChild body, document.body
-
+  executeScriptTags()
   currentState = window.history.state
   triggerEvent 'page:change'
+
+executeScriptTags = ->
+  eval(script.innerHTML) for script in document.body.getElementsByTagName 'script' when script.type in ['', 'text/javascript']
 
 
 reflectNewUrl = (url) ->
   if url isnt document.location.href
+    referer = document.location.href
     window.history.pushState { turbolinks: true, position: currentState.position + 1 }, '', url
+
+reflectRedirectedUrl = (xhr) ->
+  if (location = xhr.getResponseHeader('X-XHR-Current-Location'))
+    window.history.replaceState currentState, '', location
 
 rememberCurrentUrl = ->
   window.history.replaceState { turbolinks: true, position: window.history.length - 1 }, '', document.location.href
@@ -68,14 +89,22 @@ rememberCurrentUrl = ->
 rememberCurrentState = ->
   currentState = window.history.state
 
+rememberCurrentAssets = ->
+  assets = extractAssets document
+
 rememberInitialPage = ->
   unless initialized
     rememberCurrentUrl()
     rememberCurrentState()
+    rememberCurrentAssets()
+    createDocument = browserCompatibleDocumentParser()
     initialized = true
 
 recallScrollPosition = (page) ->
   window.scrollTo page.positionX, page.positionY
+
+resetScrollPosition = ->
+  window.scrollTo 0, 0
 
 
 triggerEvent = (name) ->
@@ -84,12 +113,21 @@ triggerEvent = (name) ->
   document.dispatchEvent event
 
 
-extractTitleAndBody = (html) ->
-  doc   = createDocument html
+extractAssets = (doc) ->
+  (node.src || node.href) for node in doc.head.childNodes when node.src or node.href
+
+assetsChanged = (doc)->
+  intersection(extractAssets(doc), assets).length != assets.length
+
+intersection = (a, b) ->
+  [a, b] = [b, a] if a.length > b.length
+  value for value in a when value in b
+
+extractTitleAndBody = (doc) ->
   title = doc.querySelector 'title'
   [ title?.textContent, doc.body ]
 
-createDocument = do ->
+browserCompatibleDocumentParser = ->
   createDocumentUsingParser = (html) ->
     (new DOMParser).parseFromString html, 'text/html'
 
@@ -109,12 +147,18 @@ createDocument = do ->
     createDocumentUsingWrite
 
 
-handleClick = (event) ->
-  link = extractLink event
+installClickHandlerLast = (event) ->
+  unless event.defaultPrevented
+    document.removeEventListener 'click', handleClick
+    document.addEventListener 'click', handleClick
 
-  if link.nodeName is 'A' and !ignoreClick(event, link)
-    visit link.href
-    event.preventDefault()
+handleClick = (event) ->
+  unless event.defaultPrevented
+    link = extractLink event
+    if link.nodeName is 'A' and !ignoreClick(event, link)
+      visit link.href
+      event.preventDefault()
+
 
 extractLink = (event) ->
   link = event.target
@@ -134,30 +178,27 @@ anchoredLink = (link) ->
 nonHtmlLink = (link) ->
   link.href.match(/\.[a-z]+(\?.*)?$/g) and not link.href.match(/\.html?(\?.*)?$/g)
 
-remoteLink = (link) ->
-  link.getAttribute('data-remote')?
-
 noTurbolink = (link) ->
-  link.getAttribute('data-no-turbolink')?
+  until ignore or link is document
+    ignore = link.getAttribute('data-no-turbolink')?
+    link = link.parentNode
+  ignore
 
-newTabClick = (event) ->
-  event.which > 1 or event.metaKey or event.ctrlKey
+nonStandardClick = (event) ->
+  event.which > 1 or event.metaKey or event.ctrlKey or event.shiftKey or event.altKey
 
 ignoreClick = (event, link) ->
-  samePageLink(link) or crossOriginLink(link) or anchoredLink(link) or
-  nonHtmlLink(link)  or remoteLink(link)      or noTurbolink(link)  or 
-  newTabClick(event)
+  crossOriginLink(link) or anchoredLink(link) or nonHtmlLink(link) or noTurbolink(link) or nonStandardClick(event)
 
 
 browserSupportsPushState =
-  window.history and window.history.pushState and window.history.replaceState
+  window.history and window.history.pushState and window.history.replaceState and window.history.state != undefined
 
 if browserSupportsPushState
+  document.addEventListener 'click', installClickHandlerLast, true
+
   window.addEventListener 'popstate', (event) ->
     fetchHistory event.state if event.state?.turbolinks
 
-  document.addEventListener 'click', (event) ->
-    handleClick event
-
 # Call Turbolinks.visit(url) from client code
-@Turbolinks = {visit}
+@Turbolinks = { visit }
