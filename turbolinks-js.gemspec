@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name     = 'turbolinks-js'
-  s.version  = '0.3.0'
+  s.version  = '0.4.0'
   s.authors  = ['David Heinemeier Hansson', 'Francesco Rodriguez']
   s.email    = ['lrodriguezsanc@gmail.com']
   s.summary  = 'Same as Turbolinks but without the CoffeeScript requirement'
