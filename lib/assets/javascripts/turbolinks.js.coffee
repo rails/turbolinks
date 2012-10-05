@@ -4,7 +4,7 @@ referer                  = document.location.href
 assets                   = []
 pageCache                = []
 createDocument           = null
-browserSupportsPushState = window.history?.pushState?
+browserSupportsPushState = window.history?.pushState? and window.history.state isnt undefined
 
 visit = (url) ->
   if browserSupportsPushState
