@@ -1,9 +1,10 @@
-initialized    = false
-currentState   = null
-referer        = document.location.href
-assets         = []
-pageCache      = []
-createDocument = null
+initialized              = false
+currentState             = null
+referer                  = document.location.href
+assets                   = []
+pageCache                = []
+createDocument           = null
+browserSupportsPushState = window.history?.pushState?
 
 visit = (url) ->
   if browserSupportsPushState
@@ -189,9 +190,6 @@ nonStandardClick = (event) ->
 ignoreClick = (event, link) ->
   crossOriginLink(link) or anchoredLink(link) or nonHtmlLink(link) or noTurbolink(link) or nonStandardClick(event)
 
-
-browserSupportsPushState =
-  window.history and window.history.pushState and window.history.replaceState and window.history.state != undefined
 
 if browserSupportsPushState
   rememberCurrentAssets()
