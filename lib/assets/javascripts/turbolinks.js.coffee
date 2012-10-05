@@ -200,5 +200,8 @@ if browserSupportsPushState
   window.addEventListener 'popstate', (event) ->
     fetchHistory event.state if event.state?.turbolinks
 
-# Call Turbolinks.visit(url) from client code
-@Turbolinks = { visit }
+reload = ->
+  visit document.location.href
+
+# Call Turbolinks.visit(url) or Turbolinks.reload() from client code
+@Turbolinks = { visit, reload }
