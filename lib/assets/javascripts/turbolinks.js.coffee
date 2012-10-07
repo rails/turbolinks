@@ -25,7 +25,7 @@ fetchReplacement = (url) ->
   xhr.onload = =>
     doc = createDocument xhr.responseText
 
-    if assetsChanged doc
+    unless loadAssets doc
       document.location.href = url
     else
       changePage extractTitleAndBody(doc)...
@@ -111,16 +111,32 @@ triggerEvent = (name) ->
   event.initEvent name, true, true
   document.dispatchEvent event
 
-
 extractAssets = (doc) ->
-  (node.src || node.href) for node in doc.head.childNodes when node.src or node.href
+  assetHash = {}
+  for node in doc.head.childNodes when node.href or node.src
+    assetHash[node.outerHTML] = node
 
-assetsChanged = (doc)->
-  intersection(extractAssets(doc), assets).length != assets.length
+isScript = (node) ->
+  node.nodeName == 'SCRIPT' and node.type in ['', 'text/javascript']
 
-intersection = (a, b) ->
-  [a, b] = [b, a] if a.length > b.length
-  value for value in a when value in b
+getScript = (url) ->
+  script = document.createElement 'script'
+  script.src = url
+  script.async = true
+  document.head.appendChild script
+
+loadAssets = (doc) ->
+  newAssets = extractAssets doc
+  
+  for asset,ident in assets when ident not of newAssets
+    return false if isScript asset
+    asset.parentNode.removeChild asset
+    delete assets[ident]
+
+  for asset,ident in newAssets when ident not of assets
+    if isScript asset then getScript asset.src
+    else document.head.appendChild asset
+    assets[ident] = asset
 
 extractTitleAndBody = (doc) ->
   title = doc.querySelector 'title'
