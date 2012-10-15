@@ -1,16 +1,16 @@
 callbacks = []
 
 ready = ->
-  callback($) for callback in callbacks
+  callback(jQuery) for callback in callbacks
 
-$ ready
+jQuery ready
 
-$.fn.ready = (callback) ->
+jQuery.fn.ready = (callback) ->
   callbacks.push callback
 
-$.setReadyEvent = (event) ->
-  $(document)
+jQuery.setReadyEvent = (event) ->
+  jQuery(document)
     .off('.turbolinks')
     .on(event + '.turbolinks', ready)
 
-$.setReadyEvent 'page:load'
+jQuery.setReadyEvent 'page:load'
