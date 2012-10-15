@@ -1,7 +1,7 @@
 callbacks = []
 
 ready = ->
-  callback(jQuery) for callback in callbacks
+  callback jQuery for callback in callbacks
 
 jQuery ready
 
