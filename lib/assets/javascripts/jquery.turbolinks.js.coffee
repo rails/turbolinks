@@ -1,7 +1,7 @@
 callbacks = []
 
 ready = ->
-  callback() for callback in callbacks
+  callback($) for callback in callbacks
 
 $ ready
 
