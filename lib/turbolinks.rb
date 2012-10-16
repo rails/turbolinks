@@ -17,6 +17,7 @@ module Turbolinks
 
       def set_xhr_current_location
         response.headers['X-XHR-Current-Location'] = request.fullpath
+      rescue ActionDispatch::IllegalStateError
       end
   end
 
