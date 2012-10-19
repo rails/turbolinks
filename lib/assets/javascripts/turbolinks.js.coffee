@@ -118,7 +118,8 @@ extractAssets = (doc) ->
   scripts.concat(stylesheets)
 
 assetsChanged = (doc)->
-  intersection(extractAssets(doc), assets).length != assets.length
+  newAssets = extractAssets(doc)
+  intersection(newAssets, assets).length != newAssets.length
 
 intersection = (a, b) ->
   [a, b] = [b, a] if a.length > b.length
