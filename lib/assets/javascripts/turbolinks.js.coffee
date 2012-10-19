@@ -113,10 +113,13 @@ triggerEvent = (name) ->
 
 
 extractAssets = (doc) ->
-  (node.src || node.href) for node in doc.head.childNodes when node.src or node.href
+  scripts = (node.src for node in doc.head.getElementsByTagName 'script' when node.src && node.type in ['', 'text/javascript'])
+  stylesheets = (node.href for node in doc.head.getElementsByTagName 'link' when node.href && node.rel=='stylesheet')
+  scripts.concat(stylesheets)
 
 assetsChanged = (doc)->
-  intersection(extractAssets(doc), assets).length != assets.length
+  newAssets = extractAssets(doc)
+  intersection(newAssets, assets).length != newAssets.length
 
 intersection = (a, b) ->
   [a, b] = [b, a] if a.length > b.length
