@@ -161,7 +161,7 @@ handleClick = (event) ->
 
 extractLink = (event) ->
   link = event.target
-  link = link.parentNode until link is document or link.nodeName is 'A'
+  link = link.parentNode until !link.parentNode or link is document or link.nodeName is 'A'
   link
 
 samePageLink = (link) ->
