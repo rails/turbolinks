@@ -113,7 +113,7 @@ triggerEvent = (name) ->
 
 
 extractAssets = (doc) ->
-  (node.src || node.href) for node in doc.head.childNodes when node.src or node.href
+  (node.src || node.href) for node in doc.head.childNodes when (node.src or node.href) and node.rel != 'canonical'
 
 assetsChanged = (doc)->
   intersection(extractAssets(doc), assets).length != assets.length
@@ -161,7 +161,7 @@ handleClick = (event) ->
 
 extractLink = (event) ->
   link = event.target
-  link = link.parentNode until link is document or link.nodeName is 'A'
+  link = link.parentNode until !link.parentNode or link is document or link.nodeName is 'A'
   link
 
 samePageLink = (link) ->
