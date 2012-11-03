@@ -113,7 +113,7 @@ triggerEvent = (name) ->
 
 
 extractAssets = (doc) ->
-  (node.src || node.href) for node in doc.head.childNodes when node.src or node.href
+  (node.src || node.href) for node in doc.head.childNodes when (node.src or node.href) and node.rel != 'canonical'
 
 assetsChanged = (doc)->
   intersection(extractAssets(doc), assets).length != assets.length
