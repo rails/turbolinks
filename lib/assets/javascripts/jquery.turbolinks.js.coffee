@@ -7,6 +7,7 @@ jQuery ready
 
 jQuery.fn.ready = (callback) ->
   callbacks.push callback
+  callback() if jQuery.isReady
 
 jQuery.setReadyEvent = (event) ->
   jQuery(document)
