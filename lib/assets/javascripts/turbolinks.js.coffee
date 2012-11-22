@@ -26,7 +26,7 @@ fetchReplacement = (url) ->
     doc = createDocument xhr.responseText
 
     if assetsChanged doc
-      document.location.href = url
+      window.location.reload()
     else
       changePage extractTitleAndBody(doc)...
       reflectRedirectedUrl xhr
@@ -175,6 +175,9 @@ anchoredLink = (link) ->
   ((link.hash and link.href.replace(link.hash, '')) is location.href.replace(location.hash, '')) or
     (link.href is location.href + '#')
 
+open_in_new_window_link = (link) ->
+  link.getAttribute("target") is "_blank"
+
 nonHtmlLink = (link) ->
   link.href.match(/\.[a-z]+(\?.*)?$/g) and not link.href.match(/\.html?(\?.*)?$/g)
 
@@ -188,7 +191,7 @@ nonStandardClick = (event) ->
   event.which > 1 or event.metaKey or event.ctrlKey or event.shiftKey or event.altKey
 
 ignoreClick = (event, link) ->
-  crossOriginLink(link) or anchoredLink(link) or nonHtmlLink(link) or noTurbolink(link) or nonStandardClick(event)
+  crossOriginLink(link) or anchoredLink(link) or nonHtmlLink(link) or noTurbolink(link) or nonStandardClick(event) or open_in_new_window_link(link)
 
 
 browserSupportsPushState =
