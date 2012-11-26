@@ -123,7 +123,7 @@ triggerEvent = (name) ->
 
 
 extractAssets = (doc) ->
-  (node.src || node.href) for node in doc.head.childNodes when node.src or node.href
+  (node.src || node.href) for node in doc.head.childNodes when (node.src or node.href) and node.rel != 'canonical' and node.rel != 'alternate'
 
 assetsChanged = (doc)->
   extractedAssets = extractAssets doc
