@@ -203,4 +203,12 @@ if browserSupportsPushState
     fetchHistory event.state if event.state?.turbolinks
 
 # Call Turbolinks.visit(url) from client code
-@Turbolinks = { visit }
+@Turbolinks = {
+  visit,
+  browserCompatibleDocumentParser,
+  triggerEvent,
+  changePage,
+  extractTitleAndBody,
+  reflectRedirectedUrl,
+  resetScrollPosition
+}
