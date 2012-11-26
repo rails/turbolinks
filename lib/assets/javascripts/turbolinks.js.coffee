@@ -2,7 +2,7 @@ initialized    = false
 currentState   = null
 referer        = document.location.href
 assets         = []
-pageCache      = []
+pageCache      = {}
 createDocument = null
 
 visit = (url) ->
@@ -26,7 +26,7 @@ fetchReplacement = (url) ->
     doc = createDocument xhr.responseText
 
     if assetsChanged doc
-      document.location.href = url
+      document.location.reload()
     else
       changePage extractTitleAndBody(doc)...
       reflectRedirectedUrl xhr
@@ -61,7 +61,8 @@ cacheCurrentPage = ->
   constrainPageCacheTo(10)
 
 constrainPageCacheTo = (limit) ->
-  delete pageCache[currentState.position - limit]
+  for own key, value of pageCache
+    pageCache[key] = null if key <= currentState.position - limit
 
 changePage = (title, body) ->
   document.title = title
@@ -155,18 +156,15 @@ installClickHandlerLast = (event) ->
 handleClick = (event) ->
   unless event.defaultPrevented
     link = extractLink event
-    if link.nodeName is 'A' and !ignoreClick(event, link)
+    if link?.nodeName is 'A' and !ignoreClick(event, link)
       visit link.href
       event.preventDefault()
 
 
 extractLink = (event) ->
   link = event.target
-  link = link.parentNode until link is document or link.nodeName is 'A'
+  link = link.parentNode until link is document or !link or link.nodeName is 'A'
   link
-
-samePageLink = (link) ->
-  link.href is document.location.href
 
 crossOriginLink = (link) ->
   location.protocol isnt link.protocol or location.host isnt link.host
@@ -184,11 +182,14 @@ noTurbolink = (link) ->
     link = link.parentNode
   ignore
 
+targetLink = (link) ->
+  link.target.length isnt 0
+
 nonStandardClick = (event) ->
   event.which > 1 or event.metaKey or event.ctrlKey or event.shiftKey or event.altKey
 
 ignoreClick = (event, link) ->
-  crossOriginLink(link) or anchoredLink(link) or nonHtmlLink(link) or noTurbolink(link) or nonStandardClick(event)
+  crossOriginLink(link) or anchoredLink(link) or nonHtmlLink(link) or noTurbolink(link) or targetLink(link) or nonStandardClick(event)
 
 
 browserSupportsPushState =
