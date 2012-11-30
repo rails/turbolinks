@@ -23,7 +23,6 @@ No jQuery or any other framework
 
 Turbolinks is designed to be as light-weight as possible (so you won't think twice about using it even for mobile stuff). It does not require jQuery or any other framework to work. But it works great _with_ jQuery or Prototype or whatever else have you.
 
-
 Events
 ------
 
@@ -36,6 +35,18 @@ Since pages will change without a full reload with Turbolinks, you can't by defa
 
 So if you wanted to have a client-side spinner, you could listen for `page:fetch` to start it and `page:change` to stop it. If you have DOM transformation that are not idempotent (the best way), you can hook them to happen only on `page:load` instead of `page:change` (as that would run them again on the cached pages).
 
+jquery.turbolinks
+-----------------
+
+If you have a lot of existing JavaScript that binds elements on jQuery.ready(), we have included the [jquery.turbolinks](https://github.com/kossnocorp/jquery.turbolinks) library that will trigger ready() when the `page:load` event is triggered by Turbolinks, and will help to quickly restore functionality of some libraries.
+
+Add the following line to your JavaScript manifest file, after `jquery.js` but before `turbolinks.js`:
+
+``` js
+//= require jquery.turbolinks
+```
+
+Additional details and configuration options can be found in the [jquery.turbolinks README](https://github.com/kossnocorp/jquery.turbolinks/blob/master/README.md).
 
 Opting out of Turbolinks
 ------------------------
