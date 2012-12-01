@@ -126,8 +126,11 @@ extractAssets = (doc) ->
   (node.src || node.href) for node in doc.head.childNodes when node.src or node.href
 
 assetsChanged = (doc)->
-  extractedAssets = extractAssets doc
-  extractedAssets.length isnt assets.length or intersection(extractedAssets, assets).length != assets.length
+  newAssets = []
+  for asset in extractAssets doc
+    newAssets.push asset
+    break if asset is assets[-1..][0]
+  newAssets.length isnt assets.length or intersection(newAssets, assets).length isnt assets.length
 
 intersection = (a, b) ->
   [a, b] = [b, a] if a.length > b.length
