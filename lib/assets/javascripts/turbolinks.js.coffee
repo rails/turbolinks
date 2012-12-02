@@ -1,7 +1,7 @@
 initialized    = false
 currentState   = null
 referer        = document.location.href
-assets         = []
+assetDigest    = document.cookie.match(/asset_digest=(\w+)/)?[1] or ''
 pageCache      = {}
 createDocument = null
 
@@ -21,17 +21,15 @@ fetchReplacement = (url) ->
   xhr.open 'GET', url, true
   xhr.setRequestHeader 'Accept', 'text/html, application/xhtml+xml, application/xml'
   xhr.setRequestHeader 'X-XHR-Referer', referer
-
+	xhr.setRequestHeader 'X-XHR-Asset-Digest', assetDigest
+	
   xhr.onload = =>
+    document.location.reload() if xhr.getResponseHeader('X-XHR-Assets-Changed') is 'true'
     doc = createDocument xhr.responseText
-
-    if assetsChanged doc
-      document.location.reload()
-    else
-      changePage extractTitleAndBody(doc)...
-      reflectRedirectedUrl xhr
-      resetScrollPosition()
-      triggerEvent 'page:load'
+    changePage extractTitleAndBody(doc)...
+    reflectRedirectedUrl xhr
+    resetScrollPosition()
+    triggerEvent 'page:load'
 
   xhr.onabort = -> console.log 'Aborted turbolink fetch!'
 
@@ -99,9 +97,6 @@ rememberCurrentUrl = ->
 rememberCurrentState = ->
   currentState = window.history.state
 
-rememberCurrentAssets = ->
-  assets = extractAssets document
-
 rememberInitialPage = ->
   unless initialized
     rememberCurrentUrl()
@@ -121,17 +116,6 @@ triggerEvent = (name) ->
   event.initEvent name, true, true
   document.dispatchEvent event
 
-
-extractAssets = (doc) ->
-  (node.src || node.href) for node in doc.head.childNodes when node.src or node.href
-
-assetsChanged = (doc)->
-  extractedAssets = extractAssets doc
-  extractedAssets.length isnt assets.length or intersection(extractedAssets, assets).length != assets.length
-
-intersection = (a, b) ->
-  [a, b] = [b, a] if a.length > b.length
-  value for value in a when value in b
 
 extractTitleAndBody = (doc) ->
   title = doc.querySelector 'title'
@@ -205,7 +189,6 @@ browserSupportsPushState =
   window.history and window.history.pushState and window.history.replaceState and window.history.state != undefined
 
 if browserSupportsPushState
-  rememberCurrentAssets()
   document.addEventListener 'click', installClickHandlerLast, true
 
   window.addEventListener 'popstate', (event) ->
