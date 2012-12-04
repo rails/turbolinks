@@ -125,7 +125,7 @@ triggerEvent = (name) ->
 
 extractAssets = (doc) ->
   if railsEnv in ['test', 'development']
-    nodes = (node.src || node.href) for node in doc.head.childNodes when (node.src and !node.src.match(/application.js/)) or node.href
+    nodes = (node.src || node.href) for node in doc.head.childNodes when (node.src and !node.src.match('application.js')) or node.href
   else
     nodes = (node.src || node.href) for node in doc.head.childNodes when node.src or node.href
 

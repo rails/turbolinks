@@ -35,4 +35,3 @@ module Turbolinks
     end
   end
 end
-nd
