@@ -18,13 +18,19 @@ module Turbolinks
       def set_xhr_current_location
         response.headers['X-XHR-Current-Location'] = request.fullpath
       end
+
+      def set_xhr_rails_env
+        if Rails.env.in? %w(test development)
+          response.headers['X-XHR-RAILS-ENV'] = Rails.env
+        end
+      end
   end
 
   class Engine < ::Rails::Engine
     initializer :turbolinks_xhr_headers do |config|
       ActionController::Base.class_eval do
         include XHRHeaders
-        before_filter :set_xhr_current_location
+        before_filter :set_xhr_current_location, :set_xhr_rails_env
       end
     end
   end
