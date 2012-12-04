@@ -4,6 +4,7 @@ referer        = document.location.href
 assets         = []
 pageCache      = {}
 createDocument = null
+railsEnv       = null
 
 visit = (url) ->
   if browserSupportsPushState
@@ -24,6 +25,7 @@ fetchReplacement = (url) ->
 
   xhr.onload = =>
     doc = createDocument xhr.responseText
+    railsEnv = xhr.getResponseHeader 'X-XHR-RAILS-ENV'
 
     if assetsChanged doc
       document.location.reload()
@@ -121,9 +123,11 @@ triggerEvent = (name) ->
   event.initEvent name, true, true
   document.dispatchEvent event
 
-
 extractAssets = (doc) ->
-  (node.src || node.href) for node in doc.head.childNodes when node.src or node.href
+  if railsEnv in ['test', 'development']
+    nodes = (node.src || node.href) for node in doc.head.childNodes when (node.src and !node.src.match(/application.js/)) or node.href
+  else
+    nodes = (node.src || node.href) for node in doc.head.childNodes when node.src or node.href
 
 assetsChanged = (doc)->
   extractedAssets = extractAssets doc
