@@ -1,7 +1,7 @@
 initialized    = false
 currentState   = null
 referer        = document.location.href
-trackingAssets = []
+loadedAssets   = null
 pageCache      = {}
 createDocument = null
 
@@ -73,15 +73,12 @@ changePage = (title, body, runScripts) ->
 
 executeScriptTags = ->
   for script in document.body.getElementsByTagName 'script' when script.type in ['', 'text/javascript']
-    if script.src? and script.src isnt '' and not script.getAttribute('data-turbolinks-evaluated')?
-      copy = document.createElement 'script'
-      copy.setAttribute attr.name, attr.value for attr in script.attributes
-      copy.setAttribute 'data-turbolinks-evaluated', ''
-      parent = script.parentNode
-      parent.removeChild script
-      parent.insertBefore copy, parent.childNodes[0]
-    else
-      window.eval(script.innerHTML)
+    copy = document.createElement 'script'
+    copy.setAttribute attr.name, attr.value for attr in script.attributes
+    copy.appendChild document.createTextNode script.innerHTML
+    { parentNode, nextSibling } = script
+    parentNode.removeChild script
+    parentNode.insertBefore copy, nextSibling
 
 
 reflectNewUrl = (url) ->
@@ -98,9 +95,6 @@ rememberCurrentUrl = ->
 
 rememberCurrentState = ->
   currentState = window.history.state
-
-rememberCurrentTrackingAssets = ->
-  trackingAssets = extractTrackAssets document
 
 rememberInitialPage = ->
   unless initialized
@@ -121,13 +115,14 @@ triggerEvent = (name) ->
   event.initEvent name, true, true
   document.dispatchEvent event
 
+
 extractTrackAssets = (doc) ->
   (node.src || node.href) for node in doc.head.childNodes when node.getAttribute?('data-turbolinks-track')?
 
-
-assetsChanged = (doc)->
-  extractedTrackAssets = extractTrackAssets doc
-  extractedTrackAssets.length isnt trackingAssets.length or intersection(extractedTrackAssets, trackingAssets).length != trackingAssets.length
+assetsChanged = (doc) ->
+  loadedAssets ||= extractTrackAssets document
+  fetchedAssets  = extractTrackAssets doc
+  fetchedAssets.length isnt loadedAssets.length or intersection(fetchedAssets, loadedAssets).length isnt loadedAssets.length
 
 intersection = (a, b) ->
   [a, b] = [b, a] if a.length > b.length
@@ -205,7 +200,6 @@ browserSupportsPushState =
   window.history and window.history.pushState and window.history.replaceState and window.history.state != undefined
 
 if browserSupportsPushState
-  rememberCurrentTrackingAssets()
   document.addEventListener 'click', installClickHandlerLast, true
 
   window.addEventListener 'popstate', (event) ->
