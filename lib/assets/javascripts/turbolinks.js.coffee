@@ -28,9 +28,8 @@ fetchReplacement = (url) ->
     if assetsChanged doc
       document.location.reload()
     else
-      changePage extractTitleAndBody(doc)...
+      changePage doc
       reflectRedirectedUrl xhr
-      resetScrollPosition()
       triggerEvent 'page:load'
 
   xhr.onabort = -> console.log 'Aborted turbolink fetch!'
@@ -41,15 +40,14 @@ fetchHistory = (state) ->
   cacheCurrentPage()
 
   if page = pageCache[state.position]
-    changePage page.title, page.body
-    recallScrollPosition page
+    changePage page, true
     triggerEvent 'page:restore'
   else
     fetchReplacement document.location.href
 
 
 cacheCurrentPage = ->
-  rememberInitialPage()
+  initialized ||= rememberInitialPage()
 
   pageCache[currentState.position] =
     url:       document.location.href,
@@ -64,11 +62,12 @@ constrainPageCacheTo = (limit) ->
   for own key, value of pageCache
     pageCache[key] = null if key <= currentState.position - limit
 
-changePage = (title, body, runScripts) ->
-  document.title = title
-  document.documentElement.replaceChild body, document.body
-  executeScriptTags() if runScripts
-  currentState = window.history.state
+changePage = (page, cached = false) ->
+  document.title = page.title if page.title?
+  document.documentElement.replaceChild page.body, document.body
+  executeScriptTags() unless cached
+  rememberCurrentState()
+  resetScrollPosition page
   triggerEvent 'page:change'
 
 executeScriptTags = ->
@@ -97,17 +96,13 @@ rememberCurrentState = ->
   currentState = window.history.state
 
 rememberInitialPage = ->
-  unless initialized
-    rememberCurrentUrl()
-    rememberCurrentState()
-    createDocument = browserCompatibleDocumentParser()
-    initialized = true
+  rememberCurrentUrl()
+  rememberCurrentState()
+  createDocument = browserCompatibleDocumentParser()
+  true
 
-recallScrollPosition = (page) ->
-  window.scrollTo page.positionX, page.positionY
-
-resetScrollPosition = ->
-  window.scrollTo 0, 0
+resetScrollPosition = (page) ->
+  window.scrollTo page?.positionX ? 0, page?.positionY ? 0
 
 
 triggerEvent = (name) ->
@@ -127,10 +122,6 @@ assetsChanged = (doc) ->
 intersection = (a, b) ->
   [a, b] = [b, a] if a.length > b.length
   value for value in a when value in b
-
-extractTitleAndBody = (doc) ->
-  title = doc.querySelector 'title'
-  [ title?.textContent, doc.body, 'runScripts' ]
 
 browserCompatibleDocumentParser = ->
   createDocumentUsingParser = (html) ->
