@@ -171,7 +171,7 @@ extractLink = (event) ->
   link
 
 crossOriginLink = (link) ->
-  location.protocol isnt link.protocol or location.host isnt link.host
+  location.protocol isnt link.protocol or location.hostname isnt link.hostname or (location.port || '80') isnt (link.port || '80')
 
 anchoredLink = (link) ->
   ((link.hash and link.href.replace(link.hash, '')) is location.href.replace(location.hash, '')) or
