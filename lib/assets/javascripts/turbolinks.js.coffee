@@ -30,7 +30,10 @@ fetchReplacement = (url) ->
     else
       changePage extractTitleAndBody(doc)...
       reflectRedirectedUrl xhr
-      resetScrollPosition()
+      if document.location.hash
+        document.location.href = document.location.href
+      else
+        resetScrollPosition()
       triggerEvent 'page:load'
 
   xhr.onabort = -> console.log 'Aborted turbolink fetch!'
@@ -87,7 +90,7 @@ reflectNewUrl = (url) ->
     window.history.pushState { turbolinks: true, position: currentState.position + 1 }, '', url
 
 reflectRedirectedUrl = (xhr) ->
-  unless (location = xhr.getResponseHeader 'X-XHR-Current-Location') is document.location.pathname + document.location.search
+  if (location = xhr.getResponseHeader 'X-XHR-Current-Location') and location isnt document.location.pathname + document.location.search
     window.history.replaceState currentState, '', location + document.location.hash
 
 rememberCurrentUrl = ->
