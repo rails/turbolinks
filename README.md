@@ -86,6 +86,8 @@ If those assets change URLs (embed an md5 stamp to ensure this), the page will d
 
 When this happens, you'll technically be requesting the same page twice. Once through Turbolinks to detect that the assets changed, and then again when we do a full redirect to that page.
 
+You can also mark any tag inside <head> with data-turbolinks-replace to replace the tag instead of doing a full page reload.
+
 
 Evaluating script tags
 ----------------------
