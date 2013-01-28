@@ -4,6 +4,8 @@ referer        = document.location.href
 loadedAssets   = null
 pageCache      = {}
 createDocument = null
+requestMethod  = document.cookie.match(/request_method=(\w+)/)?[1].toUpperCase() or ''
+xhr            = null
 
 visit = (url) ->
   if browserSupportsPushState
@@ -17,8 +19,12 @@ visit = (url) ->
 fetchReplacement = (url) ->
   triggerEvent 'page:fetch'
 
+  # Remove hash from url to ensure IE 10 compatibility
+  safeUrl = removeHash url
+
+  xhr?.abort()
   xhr = new XMLHttpRequest
-  xhr.open 'GET', url, true
+  xhr.open 'GET', safeUrl, true
   xhr.setRequestHeader 'Accept', 'text/html, application/xhtml+xml, application/xml'
   xhr.setRequestHeader 'X-XHR-Referer', referer
 
@@ -36,7 +42,9 @@ fetchReplacement = (url) ->
         resetScrollPosition()
       triggerEvent 'page:load'
 
-  xhr.onabort = -> console.log 'Aborted turbolink fetch!'
+  xhr.onloadend = -> xhr = null
+  xhr.onabort   = -> rememberCurrentUrl()
+  xhr.onerror   = -> document.location.href = url
 
   xhr.send()
 
@@ -44,6 +52,7 @@ fetchHistory = (state) ->
   cacheCurrentPage()
 
   if page = pageCache[state.position]
+    xhr?.abort()
     changePage page.title, page.body
     recallScrollPosition page
     triggerEvent 'page:restore'
@@ -112,6 +121,13 @@ recallScrollPosition = (page) ->
 resetScrollPosition = ->
   window.scrollTo 0, 0
 
+removeHash = (url) ->
+  link = url
+  unless url.href?
+    link = document.createElement 'A'
+    link.href = url
+  link.href.replace link.hash, ''
+
 
 triggerEvent = (name) ->
   event = document.createEvent 'Events'
@@ -163,7 +179,7 @@ installClickHandlerLast = (event) ->
 handleClick = (event) ->
   unless event.defaultPrevented
     link = extractLink event
-    if link?.nodeName is 'A' and !ignoreClick(event, link)
+    if link.nodeName is 'A' and !ignoreClick(event, link)
       visit link.href
       event.preventDefault()
 
@@ -177,7 +193,7 @@ crossOriginLink = (link) ->
   location.protocol isnt link.protocol or location.host isnt link.host
 
 anchoredLink = (link) ->
-  ((link.hash and link.href.replace(link.hash, '')) is location.href.replace(location.hash, '')) or
+  ((link.hash and removeHash(link)) is removeHash(location)) or
     (link.href is location.href + '#')
 
 nonHtmlLink = (link) ->
@@ -199,14 +215,21 @@ ignoreClick = (event, link) ->
   crossOriginLink(link) or anchoredLink(link) or nonHtmlLink(link) or noTurbolink(link) or targetLink(link) or nonStandardClick(event)
 
 
+initializeTurbolinks = ->
+  document.addEventListener 'click', installClickHandlerLast, true
+  window.addEventListener 'popstate', (event) ->
+    fetchHistory event.state if event.state?.turbolinks
+
 browserSupportsPushState =
   window.history and window.history.pushState and window.history.replaceState and window.history.state != undefined
 
-if browserSupportsPushState
-  document.addEventListener 'click', installClickHandlerLast, true
+browserIsntBuggy =
+  !navigator.userAgent.match /CriOS\//
 
-  window.addEventListener 'popstate', (event) ->
-    fetchHistory event.state if event.state?.turbolinks
+requestMethodIsSafe =
+  requestMethod in ['GET','']
+
+initializeTurbolinks() if browserSupportsPushState and browserIsntBuggy and requestMethodIsSafe
 
 # Call Turbolinks.visit(url) from client code
 @Turbolinks = { visit }
