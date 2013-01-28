@@ -214,8 +214,32 @@ nonStandardClick = (event) ->
 ignoreClick = (event, link) ->
   crossOriginLink(link) or anchoredLink(link) or nonHtmlLink(link) or noTurbolink(link) or targetLink(link) or nonStandardClick(event)
 
+# DOMParser HTML extension
+# 2012-09-04
+# By Eli Grey, http://eligrey.com
+# https://developer.mozilla.org/en-US/docs/DOM/DOMParser#DOMParser_HTML_extension_for_other_browsers
+domParserHtmlExtension = (DOMParser) ->
+  DOMParser_proto = DOMParser.prototype
+  real_parseFromString = DOMParser_proto.parseFromString
+  
+  # Firefox/Opera/IE throw errors on unsupported types
+  try
+    # WebKit returns null on unsupported types
+    if ((new DOMParser).parseFromString("", "text/html"))
+      # text/html parsing is natively supported
+      return
+  catch ex
+  
+  DOMParser_proto.parseFromString = (markup, type) ->
+    if (/^\s*text\/html\s*(?:;|$)/i.test(type))
+      doc = document.implementation.createHTMLDocument("")
+      doc.body.innerHTML = markup
+      return doc
+    else
+      return real_parseFromString.apply(this, arguments)
 
 initializeTurbolinks = ->
+  domParserHtmlExtension(DOMParser)
   document.addEventListener 'click', installClickHandlerLast, true
   window.addEventListener 'popstate', (event) ->
     fetchHistory event.state if event.state?.turbolinks
