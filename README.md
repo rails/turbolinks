@@ -113,6 +113,12 @@ Turbolinks is designed to work with any browser that fully supports pushState an
 Do note that existing JavaScript libraries may not all be compatible with Turbolinks out of the box due to the change in instantiation cycle. You might very well have to modify them to work with Turbolinks' new set of events.
 
 
+Javascript outside the head tag
+-------------
+
+Any javascript tags outside the head tag will be re-evauluated on each navigation, so any javascript sources will be reloaded. This can lead to events being bound multiple times for example multiple ajax submits on a remote form. Make sure any javascript src tags (javascript_include_tag etc.) are inside the page's head tag.
+
+
 Installation
 ------------
 
