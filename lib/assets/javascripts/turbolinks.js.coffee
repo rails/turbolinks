@@ -35,6 +35,7 @@ fetchReplacement = (url) ->
       document.location.reload()
     else
       changePage extractTitleAndBody(doc)...
+      replaceHeadNodes doc
       reflectRedirectedUrl xhr
       if document.location.hash
         document.location.href = document.location.href
@@ -154,6 +155,13 @@ assetsChanged = (doc) ->
   loadedAssets ||= extractTrackAssets document
   fetchedAssets  = extractTrackAssets doc
   fetchedAssets.length isnt loadedAssets.length or intersection(fetchedAssets, loadedAssets).length isnt loadedAssets.length
+
+extractReplacableNodes = (head) ->
+  node for node in head.childNodes when node.getAttribute?('data-turbolinks-replace')
+
+replaceHeadNodes = (doc) ->
+  document.head.removeChild node for node in extractReplacableNodes(document.head)
+  document.head.appendChild node for node in extractReplacableNodes(doc.head)
 
 intersection = (a, b) ->
   [a, b] = [b, a] if a.length > b.length
