@@ -65,7 +65,7 @@ cacheCurrentPage = ->
 
   pageCache[currentState.position] =
     url:       document.location.href,
-    body:      document.body,
+    body:      document.body.cloneNode(true),
     title:     document.title,
     positionY: window.pageYOffset,
     positionX: window.pageXOffset
