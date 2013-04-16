@@ -34,6 +34,7 @@ fetchReplacement = (url) ->
     if invalidContent(xhr) or assetsChanged (doc = createDocument xhr.responseText)
       document.location.reload()
     else
+      triggerEvent 'page:unload'
       changePage extractTitleAndBody(doc)...
       reflectRedirectedUrl xhr
       if document.location.hash
