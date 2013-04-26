@@ -28,14 +28,12 @@ fetchReplacement = (url) ->
   xhr.setRequestHeader 'Accept', 'text/html, application/xhtml+xml, application/xml'
   xhr.setRequestHeader 'X-XHR-Referer', referer
 
-  xhr.onload = =>
+  xhr.onload = ->
     triggerEvent 'page:receive'
     
-    if invalidContent(xhr) or assetsChanged (doc = createDocument xhr.responseText)
-      document.location.reload()
-    else
+    if doc = validateResponse()
       changePage extractTitleAndBody(doc)...
-      reflectRedirectedUrl xhr
+      reflectRedirectedUrl()
       if document.location.hash
         document.location.href = document.location.href
       else
@@ -107,7 +105,7 @@ reflectNewUrl = (url) ->
     referer = document.location.href
     window.history.pushState { turbolinks: true, position: currentState.position + 1 }, '', url
 
-reflectRedirectedUrl = (xhr) ->
+reflectRedirectedUrl = ->
   if (location = xhr.getResponseHeader 'X-XHR-Current-Location') and location isnt document.location.pathname + document.location.search
     window.history.replaceState currentState, '', location + document.location.hash
 
@@ -144,20 +142,36 @@ triggerEvent = (name) ->
   document.dispatchEvent event
 
 
-invalidContent = (xhr) ->
-  !xhr.getResponseHeader('Content-Type').match /^(?:text\/html|application\/xhtml\+xml|application\/xml)(?:;|$)/
+validateResponse = ->
+  clientError = ->
+    xhr.status.toString().match /^40/
+  
+  invalidContent = ->
+    !xhr.getResponseHeader('Content-Type').match /^(?:text\/html|application\/xhtml\+xml|application\/xml)(?:;|$)/
+  
+  extractTrackAssets = (doc) ->
+    (node.src || node.href) for node in doc.head.childNodes when node.getAttribute?('data-turbolinks-track')?
 
-extractTrackAssets = (doc) ->
-  (node.src || node.href) for node in doc.head.childNodes when node.getAttribute?('data-turbolinks-track')?
+  assetsChanged = (doc) ->
+    loadedAssets ||= extractTrackAssets document
+    fetchedAssets  = extractTrackAssets doc
+    fetchedAssets.length isnt loadedAssets.length or intersection(fetchedAssets, loadedAssets).length isnt loadedAssets.length
 
-assetsChanged = (doc) ->
-  loadedAssets ||= extractTrackAssets document
-  fetchedAssets  = extractTrackAssets doc
-  fetchedAssets.length isnt loadedAssets.length or intersection(fetchedAssets, loadedAssets).length isnt loadedAssets.length
-
-intersection = (a, b) ->
-  [a, b] = [b, a] if a.length > b.length
-  value for value in a when value in b
+  intersection = (a, b) ->
+    [a, b] = [b, a] if a.length > b.length
+    value for value in a when value in b
+    
+  if clientError()
+    # Workaround for WebKit bug (https://bugs.webkit.org/show_bug.cgi?id=93506)
+    url = document.location.href
+    window.history.replaceState null, '', '#'
+    window.location.replace url
+    false
+  else if invalidContent() or assetsChanged (doc = createDocument xhr.responseText)
+    window.location.reload()
+    false
+  else
+    doc
 
 extractTitleAndBody = (doc) ->
   title = doc.querySelector 'title'
