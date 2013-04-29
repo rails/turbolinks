@@ -31,14 +31,14 @@ fetchReplacement = (url) ->
   xhr.onload = ->
     triggerEvent 'page:receive'
 
-    if doc = validateResponse()
-      changePage extractTitleAndBody(doc)...
-      reflectRedirectedUrl()
-      if document.location.hash
-        document.location.href = document.location.href
-      else
-        resetScrollPosition()
-      triggerEvent 'page:load'
+    doc = validateResponse()
+    changePage extractTitleAndBody(doc)...
+    reflectRedirectedUrl()
+    if document.location.hash
+      document.location.href = document.location.href
+    else
+      resetScrollPosition()
+    triggerEvent 'page:load'
 
   xhr.onloadend = -> xhr = null
   xhr.onabort   = -> rememberCurrentUrl()
@@ -165,11 +165,9 @@ validateResponse = ->
     # Workaround for WebKit bug (https://bugs.webkit.org/show_bug.cgi?id=93506)
     url = document.location.href
     window.history.replaceState null, '', '#'
-    window.location.replace url
-    false
+    return window.location.replace url
   else if invalidContent() or assetsChanged (doc = createDocument xhr.responseText)
-    window.location.reload()
-    false
+    return window.location.reload()
   else
     doc
 
