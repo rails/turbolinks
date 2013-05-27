@@ -1,19 +1,11 @@
 initialized    = false
 currentState   = null
-referer        = document.location.href
+referer        = null
 loadedAssets   = null
 pageCache      = {}
 createDocument = null
 requestMethod  = document.cookie.match(/request_method=(\w+)/)?[1].toUpperCase() or ''
 xhr            = null
-
-visit = (url) ->
-  if browserSupportsPushState && browserIsntBuggy
-    cacheCurrentPage()
-    reflectNewUrl url
-    fetchReplacement url
-  else
-    document.location.href = url
 
 
 fetchReplacement = (url) ->
@@ -30,8 +22,10 @@ fetchReplacement = (url) ->
 
   xhr.onload = ->
     triggerEvent 'page:receive'
+    doc = validateResponse url
 
-    if doc = validateResponse()
+    if doc
+      reflectNewUrl url
       changePage extractTitleAndBody(doc)...
       reflectRedirectedUrl()
       if document.location.hash
@@ -46,21 +40,16 @@ fetchReplacement = (url) ->
 
   xhr.send()
 
-fetchHistory = (state) ->
+fetchHistory = (position) ->
   cacheCurrentPage()
-
-  if page = pageCache[state.position]
-    xhr?.abort()
-    changePage page.title, page.body
-    recallScrollPosition page
-    triggerEvent 'page:restore'
-  else
-    fetchReplacement document.location.href
+  page = pageCache[position]
+  xhr?.abort()
+  changePage page.title, page.body
+  recallScrollPosition page
+  triggerEvent 'page:restore'
 
 
 cacheCurrentPage = ->
-  rememberInitialPage()
-
   pageCache[currentState.position] =
     url:       document.location.href,
     body:      document.body,
@@ -101,8 +90,7 @@ removeNoscriptTags = ->
   return
 
 reflectNewUrl = (url) ->
-  if url isnt document.location.href
-    referer = document.location.href
+  if url isnt referer
     window.history.pushState { turbolinks: true, position: currentState.position + 1 }, '', url
 
 reflectRedirectedUrl = ->
@@ -115,13 +103,6 @@ rememberCurrentUrl = ->
 
 rememberCurrentState = ->
   currentState = window.history.state
-
-rememberInitialPage = ->
-  unless initialized
-    rememberCurrentUrl()
-    rememberCurrentState()
-    createDocument = browserCompatibleDocumentParser()
-    initialized = true
 
 recallScrollPosition = (page) ->
   window.scrollTo page.positionX, page.positionY
@@ -142,9 +123,9 @@ triggerEvent = (name) ->
   document.dispatchEvent event
 
 
-validateResponse = ->
-  clientError = ->
-    xhr.status.toString().match /^4/
+validateResponse = (url) ->
+  clientOrServerError = ->
+    xhr.status >= 400 and xhr.status < 600
 
   invalidContent = ->
     !xhr.getResponseHeader('Content-Type').match /^(?:text\/html|application\/xhtml\+xml|application\/xml)(?:;|$)/
@@ -161,14 +142,11 @@ validateResponse = ->
     [a, b] = [b, a] if a.length > b.length
     value for value in a when value in b
 
-  if clientError()
-    # Workaround for WebKit bug (https://bugs.webkit.org/show_bug.cgi?id=93506)
-    url = document.location.href
-    window.history.replaceState null, '', '#'
-    window.location.replace url
+  if clientOrServerError()
+    document.location.href = url
     false
   else if invalidContent() or assetsChanged (doc = createDocument xhr.responseText)
-    window.location.reload()
+    document.location.reload()
     false
   else
     doc
@@ -269,12 +247,21 @@ nonStandardClick = (event) ->
 ignoreClick = (event, link) ->
   crossOriginLink(link) or anchoredLink(link) or nonHtmlLink(link) or noTurbolink(link) or targetLink(link) or nonStandardClick(event)
 
-
 initializeTurbolinks = ->
+  rememberCurrentUrl()
+  rememberCurrentState()
+  createDocument = browserCompatibleDocumentParser()
   document.addEventListener 'click', installClickHandlerLast, true
   window.addEventListener 'popstate', (event) ->
-    fetchHistory event.state if event.state?.turbolinks
+    state = event.state
+
+    if state and state.turbolinks
+      if pageCache[state.position]
+        fetchHistory state.position
+      else
+        visit event.target.location.href
   , false
+
 
 browserSupportsPushState =
   window.history and window.history.pushState and window.history.replaceState and window.history.state != undefined
@@ -285,7 +272,16 @@ browserIsntBuggy =
 requestMethodIsSafe =
   requestMethod in ['GET','']
 
-initializeTurbolinks() if browserSupportsPushState and browserIsntBuggy and requestMethodIsSafe
+if browserSupportsPushState and browserIsntBuggy and requestMethodIsSafe
+  visit = (url) ->
+    referer = document.location.href
+    cacheCurrentPage()
+    fetchReplacement url
+
+  initializeTurbolinks()
+else
+  visit = (url) ->
+    document.location.href = url
 
 # Call Turbolinks.visit(url) from client code
 @Turbolinks = { visit }
