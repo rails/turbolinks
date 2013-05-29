@@ -127,8 +127,8 @@ triggerEvent = (name) ->
 processResponse = (response) ->
   result = null
 
-  clientError = ->
-    response.status.toString().match /^4/
+  clientOrServerError = ->
+    response.status >= 400 and response.status < 600
 
   validContent = ->
     response.getResponseHeader('Content-Type').match /^(?:text\/html|application\/xhtml\+xml|application\/xml)(?:;|$)/
@@ -145,7 +145,7 @@ processResponse = (response) ->
     [a, b] = [b, a] if a.length > b.length
     value for value in a when value in b
 
-  if !clientError() and validContent()
+  if not clientOrServerError() and validContent()
     doc = createDocument(response.responseText)
     if doc and !assetsChanged(doc)
       result = doc
