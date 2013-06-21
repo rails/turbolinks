@@ -8,7 +8,7 @@ requestMethod  = document.cookie.match(/request_method=(\w+)/)?[1].toUpperCase()
 xhr            = null
 
 visit = (url) ->
-  if browserSupportsPushState && browserIsntBuggy
+  if browserSupportsPushState && browserIsntBuggy && stateIsntBuggy
     cacheCurrentPage()
     reflectNewUrl url
     fetchReplacement url
@@ -281,6 +281,9 @@ browserSupportsPushState =
 
 browserIsntBuggy =
   !navigator.userAgent.match /CriOS\//
+
+stateIsntBuggy =
+  window.history.state isnt null
 
 requestMethodIsSafe =
   requestMethod in ['GET','']
