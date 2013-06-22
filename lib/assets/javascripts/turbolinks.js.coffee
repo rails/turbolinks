@@ -273,7 +273,11 @@ ignoreClick = (event, link) ->
 initializeTurbolinks = ->
   document.addEventListener 'click', installClickHandlerLast, true
   window.addEventListener 'popstate', (event) ->
-    fetchHistory event.state if event.state?.turbolinks
+    if event.state?.turbolinks
+      if initialized
+        fetchHistory event.state
+      else
+        cacheCurrentPage()
   , false
 
 browserSupportsPushState =
