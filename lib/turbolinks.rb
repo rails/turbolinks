@@ -47,12 +47,30 @@ module Turbolinks
     end
   end
 
+  module XHRUrlFor
+    def self.included(base)
+      base.alias_method_chain :url_for, :xhr_referer
+    end
+
+    def url_for_with_xhr_referer(options = {})
+      if options == :back and controller.request.headers["X-XHR-Referer"]
+        controller.request.headers["X-XHR-Referer"]
+      else
+        url_for_without_xhr_referer(options)
+      end
+    end
+  end
+
   class Engine < ::Rails::Engine
     initializer :turbolinks_xhr_headers do |config|
       ActionController::Base.class_eval do
         include XHRHeaders, Cookies, XDomainBlocker
         before_filter :set_xhr_redirected_to, :set_request_method_cookie
         after_filter :abort_xdomain_redirect
+      end
+
+      ActionView::Helpers::UrlHelper.module_eval do
+        include XHRUrlFor
       end
 
       ActionDispatch::Request.class_eval do
