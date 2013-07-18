@@ -8,7 +8,9 @@ requestMethod  = document.cookie.match(/request_method=(\w+)/)?[1].toUpperCase()
 xhr            = null
 usePrefetch    = false
 prefetchCache  = null
-startTime = null
+prefetchTimer  = null
+#Benchmark Use Only
+startTime      = null
 
 createXhrRequest = (url, sourceUrl) ->
   # Remove hash from url to ensure IE 10 compatibility
@@ -25,8 +27,10 @@ fetchReplacement = (url, prefetch) ->
   usePrefetch = url
   startTime = new Date().getTime()
   if prefetch
-    console.log "Prefetching"
     usePrefetch = null
+  else if prefetchTimer
+      clearTimeout prefetchTimer
+      prefetchTimer = null
 
   if usePrefetch isnt prefetchCache?.url
     xhr?.abort()
@@ -72,9 +76,12 @@ applyXhrResponse = (url, doc, cachedXhr) ->
   console.log "Page loaded in #{timeDiff}ms from Click"
   triggerEvent 'page:load'
       
-prefetch = (url) ->
+prefetch = (url) ->  
   referer = document.location.href
   fetchReplacement url, true
+    
+  
+  
 
 fetchHistory = (position) ->
   cacheCurrentPage()
@@ -242,18 +249,45 @@ browserCompatibleDocumentParser = ->
 
 
 installPrefetchMonitor = ->
+  document.addEventListener 'mouseover', handlePrefetchDelay, false
   document.addEventListener 'mousedown', handlePrefetch, false
   document.addEventListener 'touchstart', handlePrefetch, false
+
+cancelPrefetch = ->
+  if prefetchTimer
+    clearTimeout prefetchTimer
+    prefetchTimer = null
 
 installClickHandlerLast = (event) ->
   unless event.defaultPrevented
     document.removeEventListener 'click', handleClick, false
     document.addEventListener 'click', handleClick, false
 
+handlePrefetchDelay = (event) ->
+  unless event.defaultPrevented
+    link = extractLink event
+    if link.nodeName is 'A' and !ignoreClick(event, link)
+      link.addEventListener 'mouseout', cancelPrefetch, false
+      if prefetchTimer
+        clearTimeout prefetchTimer
+        prefetchTimer = null
+
+      prefetchTimer = setTimeout(->
+        prefetch link.href
+        prefetchTimer = null
+      , 300)
+      setTimeout(->
+        link.removeEventListener 'mouseout', cancelPrefetch, false
+      ,300)
+
 handlePrefetch = (event) ->
   unless event.defaultPrevented
     link = extractLink event
     if link.nodeName is 'A' and !ignoreClick(event, link)
+      if prefetchTimer
+        clearTimeout prefetchTimer
+        prefetchTimer = null
+
       prefetch link.href
 
 handleClick = (event) ->
@@ -262,7 +296,6 @@ handleClick = (event) ->
     if link.nodeName is 'A' and !ignoreClick(event, link)
       visit link.href unless pageChangePrevented()
       event.preventDefault()
-
 
 extractLink = (event) ->
   link = event.target
