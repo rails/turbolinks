@@ -7,8 +7,7 @@ createDocument = null
 requestMethod  = document.cookie.match(/request_method=(\w+)/)?[1].toUpperCase() or ''
 xhr            = null
 
-
-fetchReplacement = (url) ->
+fetchReplacement = (url, restoredFromPrefetchCache = false) ->
   triggerEvent 'page:fetch'
 
   # Remove hash from url to ensure IE 10 compatibility
@@ -24,13 +23,13 @@ fetchReplacement = (url) ->
     triggerEvent 'page:receive'
 
     if doc = processResponse()
-      reflectNewUrl url
+      reflectNewUrl url unless restoredFromPrefetchCache
       changePage extractTitleAndBody(doc)...
       reflectRedirectedUrl()
       if document.location.hash
         document.location.href = document.location.href
       else
-        resetScrollPosition()
+        resetScrollPosition() unless restoredFromPrefetchCache
       triggerEvent 'page:load'
     else
       document.location.href = url
@@ -52,11 +51,12 @@ fetchHistory = (position) ->
 
 cacheCurrentPage = ->
   pageCache[currentState.position] =
-    url:       document.location.href,
-    body:      document.body,
-    title:     document.title,
-    positionY: window.pageYOffset,
-    positionX: window.pageXOffset
+    url:                    document.location.href,
+    body:                   document.body,
+    title:                  document.title,
+    positionY:              window.pageYOffset,
+    positionX:              window.pageXOffset,
+    prefetchCacheDisabled:  document.querySelector("[data-no-turbolinks-prefetch-cache]")?
 
   constrainPageCacheTo cacheSize
 
@@ -67,6 +67,20 @@ constrainPageCacheTo = (limit) ->
   for own key, value of pageCache
     pageCache[key] = null if key <= currentState.position - limit
   return
+
+restorePrefetchCache = (url) ->
+  if cache = latestPageCacheFromUrl url
+    reflectNewUrl url
+    changePage cache.title, cache.body
+
+latestPageCacheFromUrl = (url) ->
+  pageCacheKeysLatestFirst = Object.keys(pageCache).sort (a, b) -> b - a
+
+  isCacheForUrl = (cache, url) ->
+    cache?.url is url and !cache.prefetchCacheDisabled
+
+  for key in pageCacheKeysLatestFirst
+    return pageCache[key] if isCacheForUrl(pageCache[key], url)
 
 changePage = (title, body, csrfToken, runScripts) ->
   document.title = title
@@ -277,7 +291,8 @@ if browserSupportsPushState and browserIsntBuggy and requestMethodIsSafe
   visit = (url) ->
     referer = document.location.href
     cacheCurrentPage()
-    fetchReplacement url
+    restoredFromPrefetchCache = restorePrefetchCache url
+    fetchReplacement url, restoredFromPrefetchCache
 
   initializeTurbolinks()
 else
