@@ -6,40 +6,68 @@ pageCache      = {}
 createDocument = null
 requestMethod  = document.cookie.match(/request_method=(\w+)/)?[1].toUpperCase() or ''
 xhr            = null
+usePrefetch    = false
+prefetchCache  = null
 
 
-fetchReplacement = (url) ->
-  triggerEvent 'page:fetch'
-
+createXhrRequest = (url, sourceUrl) ->
   # Remove hash from url to ensure IE 10 compatibility
   safeUrl = removeHash url
 
-  xhr?.abort()
-  xhr = new XMLHttpRequest
-  xhr.open 'GET', safeUrl, true
-  xhr.setRequestHeader 'Accept', 'text/html, application/xhtml+xml, application/xml'
-  xhr.setRequestHeader 'X-XHR-Referer', referer
+  newXhr = new XMLHttpRequest
+  newXhr.open 'GET', safeUrl, true
+  newXhr.setRequestHeader 'Accept', 'text/html, application/xhtml+xml, application/xml'
+  newXhr.setRequestHeader 'X-XHR-Referer', sourceUrl
+  newXhr
 
-  xhr.onload = ->
-    triggerEvent 'page:receive'
+fetchReplacement = (url, prefetch) ->
+  triggerEvent 'page:fetch'
+  usePrefetch = url
+  if prefetch
+    usePrefetch = null
 
-    if doc = processResponse()
-      reflectNewUrl url
-      changePage extractTitleAndBody(doc)...
-      reflectRedirectedUrl()
-      if document.location.hash
-        document.location.href = document.location.href
+  if usePrefetch isnt prefetchCache?.url
+    xhr?.abort()
+    xhr = createXhrRequest url, referer
+    prefetchCache = {url: url, doc: null}
+    xhr.onload = ->
+      if prefetch && usePrefetch isnt url
+        prefetchCache.doc = processResponse()
+        prefetchCache.xhr = xhr
       else
-        resetScrollPosition()
-      triggerEvent 'page:load'
-    else
+        if doc = processResponse()
+          usePrefetch = null
+          applyXhrResponse(url, doc)
+          prefetchCache = null
+        else
+          document.location.href = url
+
+    xhr.onloadend = -> xhr = null
+    xhr.onabort   = -> rememberCurrentUrl()
+    xhr.onerror   = -> 
       document.location.href = url
+      prefetchCache = null
 
-  xhr.onloadend = -> xhr = null
-  xhr.onabort   = -> rememberCurrentUrl()
-  xhr.onerror   = -> document.location.href = url
+    xhr.send()
+  else if prefetchCache.doc
+    console.log "Using Cache"
+    applyXhrResponse(prefetchCache.url, prefetchCache.doc, prefetchCache.xhr)
+    prefetchCache = null
 
-  xhr.send()
+applyXhrResponse = (url, doc, cachedXhr) ->
+  triggerEvent 'page:receive'
+  reflectNewUrl url
+  changePage extractTitleAndBody(doc)...
+  reflectRedirectedUrl(cachedXhr)
+  if document.location.hash
+    document.location.href = document.location.href
+  else
+    resetScrollPosition()
+  triggerEvent 'page:load'
+      
+prefetch = (url) ->
+  referer = document.location.href
+  fetchReplacement url, true
 
 fetchHistory = (position) ->
   cacheCurrentPage()
@@ -97,8 +125,9 @@ reflectNewUrl = (url) ->
   if url isnt referer
     window.history.pushState { turbolinks: true, position: currentState.position + 1 }, '', url
 
-reflectRedirectedUrl = ->
-  if location = xhr.getResponseHeader 'X-XHR-Redirected-To'
+reflectRedirectedUrl = (cachedXhr) ->
+  cachedXhr = cachedXhr || xhr
+  if location = cachedXhr.getResponseHeader 'X-XHR-Redirected-To'
     preservedHash = if removeHash(location) is location then document.location.hash else ''
     window.history.replaceState currentState, '', location + preservedHash
 
@@ -205,10 +234,20 @@ browserCompatibleDocumentParser = ->
       return createDocumentUsingWrite
 
 
+installPrefetchMonitor = ->
+  document.addEventListener 'mouseover', handlePrefetch, false
+  document.addEventListener 'touchstart', handlePrefetch, false
+
 installClickHandlerLast = (event) ->
   unless event.defaultPrevented
     document.removeEventListener 'click', handleClick, false
     document.addEventListener 'click', handleClick, false
+
+handlePrefetch = (event) ->
+  unless event.defaultPrevented
+    link = extractLink event
+    if link.nodeName is 'A' and !ignoreClick(event, link)
+      prefetch link.href
 
 handleClick = (event) ->
   unless event.defaultPrevented
@@ -254,6 +293,7 @@ initializeTurbolinks = ->
   rememberCurrentState()
   createDocument = browserCompatibleDocumentParser()
   document.addEventListener 'click', installClickHandlerLast, true
+  installPrefetchMonitor()
   window.addEventListener 'popstate', (event) ->
     state = event.state
 
