@@ -24,6 +24,7 @@ fetchReplacement = (url, prefetch) ->
   triggerEvent 'page:fetch'
   usePrefetch = url
   if prefetch
+    console.log "Prefetching"
     usePrefetch = null
 
   if usePrefetch isnt prefetchCache?.url
@@ -32,8 +33,11 @@ fetchReplacement = (url, prefetch) ->
     prefetchCache = {url: url, doc: null}
     xhr.onload = ->
       if prefetch && usePrefetch isnt url
-        prefetchCache.doc = processResponse()
-        prefetchCache.xhr = xhr
+        if doc = processResponse()
+          prefetchCache.doc = doc
+          prefetchCache.xhr = xhr
+        else
+          prefetchCache = null
       else
         if doc = processResponse()
           usePrefetch = null
