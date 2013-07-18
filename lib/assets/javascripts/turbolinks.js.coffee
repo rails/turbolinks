@@ -21,47 +21,42 @@ createXhrRequest = (url, sourceUrl) ->
   newXhr
 
 fetchReplacement = (url, prefetch) ->
-  usePrefetch = url
+  usePrefetch = if !prefetch then url else null
 
-  clearPrefetchTimer()
-  if prefetch
-    usePrefetch = false
-  else
-    triggerEvent 'page:fetch'
+  clearPrefetchTimer()  
+  triggerEvent 'page:fetch' unless prefetch
 
-  if prefetch && prefetchCache?.url is url
-    return
-
-  if url isnt prefetchCache?.url
-    xhr?.abort()
-    xhr           = createXhrRequest url, referer
-    prefetchCache = {url: url, doc: null}
-
-    xhr.onload = ->
-      if prefetch && usePrefetch isnt url
-        if doc = processResponse()
-          prefetchCache.doc = doc
-          prefetchCache.xhr = xhr
-        else
-          prefetchCache = null
-      else
-        if doc = processResponse()
-          usePrefetch = false
-          applyXhrResponse(url, doc)
-          prefetchCache = null
-        else
-          document.location.href = url
-
-    xhr.onloadend = -> xhr = null
-    xhr.onabort   = -> rememberCurrentUrl()
-    xhr.onerror   = -> 
-      document.location.href = url
+  if !prefetch or prefetchCache?.url isnt url
+    if prefetchCache?.url is url and prefetchCache.doc
+      applyXhrResponse prefetchCache.url, prefetchCache.doc, prefetchCache.xhr
       prefetchCache = null
+    else if url isnt prefetchCache?.url
+      fetchFromServer url, prefetch
 
-    xhr.send()
-  else if prefetchCache.doc
-    applyXhrResponse prefetchCache.url, prefetchCache.doc, prefetchCache.xhr
+fetchFromServer = (url, prefetch) ->
+  xhr?.abort()
+  xhr           = createXhrRequest url, referer
+  prefetchCache = {url: url, doc: null}
+
+  xhr.onload = ->
+    if doc = processResponse()
+      if prefetch and usePrefetch isnt url
+        prefetchCache.doc = doc
+        prefetchCache.xhr = xhr
+      else
+        usePrefetch = false
+        prefetchCache = null
+        applyXhrResponse(url, doc)
+    else
+      prefetchCache = null
+      document.location.href = url unless prefetch
+  xhr.onloadend = -> xhr = null
+  xhr.onabort   = -> rememberCurrentUrl()
+  xhr.onerror   = -> 
+    document.location.href = url
     prefetchCache = null
+
+  xhr.send()
 
 applyXhrResponse = (url, doc, cachedXhr) ->
   triggerEvent 'page:receive'
