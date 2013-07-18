@@ -8,7 +8,7 @@ requestMethod  = document.cookie.match(/request_method=(\w+)/)?[1].toUpperCase()
 xhr            = null
 usePrefetch    = false
 prefetchCache  = null
-
+startTime = null
 
 createXhrRequest = (url, sourceUrl) ->
   # Remove hash from url to ensure IE 10 compatibility
@@ -23,6 +23,7 @@ createXhrRequest = (url, sourceUrl) ->
 fetchReplacement = (url, prefetch) ->
   triggerEvent 'page:fetch'
   usePrefetch = url
+  startTime = new Date().getTime()
   if prefetch
     console.log "Prefetching"
     usePrefetch = null
@@ -67,6 +68,8 @@ applyXhrResponse = (url, doc, cachedXhr) ->
     document.location.href = document.location.href
   else
     resetScrollPosition()
+  timeDiff = new Date().getTime() - startTime
+  console.log "Page loaded in #{timeDiff}ms from Click"
   triggerEvent 'page:load'
       
 prefetch = (url) ->
@@ -239,7 +242,7 @@ browserCompatibleDocumentParser = ->
 
 
 installPrefetchMonitor = ->
-  document.addEventListener 'mouseover', handlePrefetch, false
+  document.addEventListener 'mousedown', handlePrefetch, false
   document.addEventListener 'touchstart', handlePrefetch, false
 
 installClickHandlerLast = (event) ->
