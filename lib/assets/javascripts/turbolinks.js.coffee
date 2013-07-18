@@ -27,13 +27,15 @@ fetchReplacement = (url, prefetch) ->
   usePrefetch = url
   startTime = new Date().getTime()
   if prefetch
-    console.log "Prefetching"
     usePrefetch = null
   else if prefetchTimer
       clearTimeout prefetchTimer
       prefetchTimer = null
 
-  if url isnt prefetchCache?.url or (prefetch and prefetchCache.url isnt url)
+  if prefetch && prefetchCache?.url is url
+    return
+
+  if url isnt prefetchCache?.url
     xhr?.abort()
     xhr = createXhrRequest url, referer
     prefetchCache = {url: url, doc: null}
