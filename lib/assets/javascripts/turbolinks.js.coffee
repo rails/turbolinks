@@ -308,8 +308,11 @@ targetLink = (link) ->
 nonStandardClick = (event) ->
   event.which > 1 or event.metaKey or event.ctrlKey or event.shiftKey or event.altKey
 
+dataRemoteLink = (link) ->
+  link.getAttribute('data-remote')
+  
 ignoreClick = (event, link) ->
-  crossOriginLink(link) or anchoredLink(link) or nonHtmlLink(link) or noTurbolink(link) or targetLink(link) or nonStandardClick(event)
+  crossOriginLink(link) or anchoredLink(link) or nonHtmlLink(link) or noTurbolink(link) or targetLink(link) or nonStandardClick(event) or dataRemoteLink(link)
 
 initializeTurbolinks = ->
   rememberCurrentUrl()
