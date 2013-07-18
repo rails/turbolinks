@@ -9,8 +9,6 @@ xhr            = null
 usePrefetch    = false
 prefetchCache  = null
 prefetchTimer  = null
-#Benchmark Use Only
-startTime      = null
 
 createXhrRequest = (url, sourceUrl) ->
   # Remove hash from url to ensure IE 10 compatibility
@@ -23,22 +21,22 @@ createXhrRequest = (url, sourceUrl) ->
   newXhr
 
 fetchReplacement = (url, prefetch) ->
-  triggerEvent 'page:fetch'
   usePrefetch = url
-  startTime = new Date().getTime()
+
+  clearPrefetchTimer()
   if prefetch
-    usePrefetch = null
-  else if prefetchTimer
-      clearTimeout prefetchTimer
-      prefetchTimer = null
+    usePrefetch = false
+  else
+    triggerEvent 'page:fetch'
 
   if prefetch && prefetchCache?.url is url
     return
 
   if url isnt prefetchCache?.url
     xhr?.abort()
-    xhr = createXhrRequest url, referer
+    xhr           = createXhrRequest url, referer
     prefetchCache = {url: url, doc: null}
+
     xhr.onload = ->
       if prefetch && usePrefetch isnt url
         if doc = processResponse()
@@ -48,7 +46,7 @@ fetchReplacement = (url, prefetch) ->
           prefetchCache = null
       else
         if doc = processResponse()
-          usePrefetch = null
+          usePrefetch = false
           applyXhrResponse(url, doc)
           prefetchCache = null
         else
@@ -62,8 +60,7 @@ fetchReplacement = (url, prefetch) ->
 
     xhr.send()
   else if prefetchCache.doc
-    console.log "Using Cache"
-    applyXhrResponse(prefetchCache.url, prefetchCache.doc, prefetchCache.xhr)
+    applyXhrResponse prefetchCache.url, prefetchCache.doc, prefetchCache.xhr
     prefetchCache = null
 
 applyXhrResponse = (url, doc, cachedXhr) ->
@@ -75,16 +72,11 @@ applyXhrResponse = (url, doc, cachedXhr) ->
     document.location.href = document.location.href
   else
     resetScrollPosition()
-  timeDiff = new Date().getTime() - startTime
-  console.log "Page loaded in #{timeDiff}ms from Click"
   triggerEvent 'page:load'
       
 prefetch = (url) ->  
   referer = document.location.href
   fetchReplacement url, true
-    
-  
-  
 
 fetchHistory = (position) ->
   cacheCurrentPage()
@@ -93,7 +85,6 @@ fetchHistory = (position) ->
   changePage page.title, page.body
   recallScrollPosition page
   triggerEvent 'page:restore'
-
 
 cacheCurrentPage = ->
   pageCache[currentState.position] =
@@ -256,7 +247,7 @@ installPrefetchMonitor = ->
   document.addEventListener 'mousedown', handlePrefetch, false
   document.addEventListener 'touchstart', handlePrefetch, false
 
-cancelPrefetch = ->
+clearPrefetchTimer = ->
   if prefetchTimer
     clearTimeout prefetchTimer
     prefetchTimer = null
@@ -270,27 +261,21 @@ handlePrefetchDelay = (event) ->
   unless event.defaultPrevented
     link = extractLink event
     if link.nodeName is 'A' and !ignoreClick(event, link)
-      link.addEventListener 'mouseout', cancelPrefetch, false
-      if prefetchTimer
-        clearTimeout prefetchTimer
-        prefetchTimer = null
-
+      clearPrefetchTimer()
+      link.addEventListener 'mouseout', clearPrefetchTimer, false
       prefetchTimer = setTimeout(->
         prefetch link.href
         prefetchTimer = null
       , 300)
       setTimeout(->
-        link.removeEventListener 'mouseout', cancelPrefetch, false
+        link.removeEventListener 'mouseout', clearPrefetchTimer(), false
       ,300)
 
 handlePrefetch = (event) ->
   unless event.defaultPrevented
     link = extractLink event
     if link.nodeName is 'A' and !ignoreClick(event, link)
-      if prefetchTimer
-        clearTimeout prefetchTimer
-        prefetchTimer = null
-
+      clearPrefetchTimer()
       prefetch link.href
 
 handleClick = (event) ->
