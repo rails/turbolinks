@@ -74,7 +74,7 @@ latestPageCacheFromUrl = (url) ->
   pageCacheKeysLatestFirst = Object.keys(pageCache).sort (a, b) -> b - a
 
   isCacheForUrl = (cache, url) ->
-    cache and cache.url is url and !cache.prefetchCacheDisabled
+    cache?.url is url and !cache.prefetchCacheDisabled
 
   for key in pageCacheKeysLatestFirst
     return pageCache[key] if isCacheForUrl(pageCache[key], url)
