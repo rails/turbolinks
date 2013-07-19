@@ -213,7 +213,9 @@ installClickHandlerLast = (event) ->
 handleClick = (event) ->
   unless event.defaultPrevented
     link = extractLink event
-    if link.nodeName is 'A' and !ignoreClick(event, link)
+    if anchoredLink(link)
+      reflectNewUrl(link)
+    else if link.nodeName is 'A' and !ignoreClick(event, link)
       visit link.href unless pageChangePrevented()
       event.preventDefault()
 
@@ -247,7 +249,7 @@ nonStandardClick = (event) ->
   event.which > 1 or event.metaKey or event.ctrlKey or event.shiftKey or event.altKey
 
 ignoreClick = (event, link) ->
-  crossOriginLink(link) or anchoredLink(link) or nonHtmlLink(link) or noTurbolink(link) or targetLink(link) or nonStandardClick(event)
+  crossOriginLink(link)  or nonHtmlLink(link) or noTurbolink(link) or targetLink(link) or nonStandardClick(event)
 
 initializeTurbolinks = ->
   rememberCurrentUrl()
