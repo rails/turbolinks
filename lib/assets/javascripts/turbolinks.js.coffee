@@ -21,6 +21,9 @@ fetchReplacement = (url) ->
   xhr.setRequestHeader 'X-XHR-Referer', referer
 
   xhr.onload = ->
+    if loc = xhr.getResponseHeader 'Location'
+      return location.href = loc
+
     triggerEvent 'page:receive'
 
     if doc = processResponse()
