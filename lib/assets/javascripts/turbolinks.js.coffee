@@ -21,7 +21,7 @@ fetchReplacement = (url) ->
   xhr.setRequestHeader 'X-XHR-Referer', referer
 
   xhr.onload = ->
-    if loc = xhr.getResponseHeader 'Location'
+    if loc = xhr.getResponseHeader 'Location' and 400 <= xhr.status < 600
       return location.href = loc
 
     triggerEvent 'page:receive'
