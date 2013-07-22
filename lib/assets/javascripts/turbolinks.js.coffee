@@ -21,9 +21,6 @@ fetchReplacement = (url) ->
   xhr.setRequestHeader 'X-XHR-Referer', referer
 
   xhr.onload = ->
-    if loc = xhr.getResponseHeader 'Location' and 400 <= xhr.status < 600
-      return location.href = loc
-
     triggerEvent 'page:receive'
 
     if doc = processResponse()
@@ -36,6 +33,8 @@ fetchReplacement = (url) ->
         resetScrollPosition()
       triggerEvent 'page:load'
     else
+      # for cross origin redirect
+      url = xhr.getResponseHeader('Location') or url
       document.location.href = url
 
   xhr.onloadend = -> xhr = null
