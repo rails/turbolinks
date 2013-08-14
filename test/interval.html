@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Home</title>
+  <script type="text/javascript" src="/js/turbolinks.js"></script>
+</head>
+<body class="page-interval">
+  <p>
+    The "ticker" on this page should increment ~1x/sec, even if you navigate
+    away and back to the page several times.
+  </p>
+
+  <ul>
+    <li><a href="/interval.html">This page</a> (click here a few times)</li>
+    <li><a href="/index.html">Home</a></li>
+  </ul>
+
+  <div>
+    Ticker: <span id="ticker">0</span>
+  </div>
+
+  <script type="text/javascript">
+    function incrementTicker() {
+      var ticker = document.getElementById('ticker');
+      if (ticker) {
+        ticker.textContent = Number(ticker.textContent) + 1;
+      }
+    }
+
+    console.log('Calling setInterval');
+    setInterval(incrementTicker, 1000);
+  </script>
+</body>
+</html>

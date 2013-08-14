@@ -7,7 +7,7 @@ createDocument = null
 requestMethod  = document.cookie.match(/request_method=(\w+)/)?[1].toUpperCase() or ''
 xhr            = null
 timeouts       = []
-
+intervals      = []
 
 fetchReplacement = (url) ->
   triggerEvent 'page:fetch', url: url
@@ -75,9 +75,11 @@ changePage = (title, body, csrfToken, runScripts) ->
   CSRFToken.update csrfToken if csrfToken?
   removeNoscriptTags()
 
-  # Cancel any pending calls to setTimeout
+  # Cancel any pending calls to setTimeout and setInterval
   clearTimeout(timeout) for timeout in timeouts
+  clearInterval(interval) for interval in intervals
   timeouts.length = 0
+  intervals.length = 0
 
   executeScriptTags() if runScripts
   currentState = window.history.state
@@ -295,6 +297,13 @@ initializeTurbolinks = ->
     timeout = origSetTimeout.apply(window, arguments)
     timeouts.push(timeout)
     timeout
+
+  # Do the same w/ window.setInterval
+  origSetInterval = window.setInterval
+  window.setInterval = ->
+    interval = origSetInterval.apply(window, arguments)
+    intervals.push(interval)
+    interval
 
 browserSupportsPushState =
   window.history and window.history.pushState and window.history.replaceState and window.history.state != undefined
