@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Home</title>
+  <script type="text/javascript" src="/js/turbolinks.js"></script>
+</head>
+<body class="page-timeout">
+  <p>
+    If you navigate away from this page and back again multiple times, you should not see multiple
+    list items created from separate calls to <code>setTimeout</code> on each page change.
+  </p>
+
+  <ul>
+    <li><a href="/timeout.html">This page</a> (click here a few times)</li>
+    <li><a href="/index.html">Home</a></li>
+  </ul>
+
+  <script type="text/javascript">
+    function createListItem() {
+      var list = document.querySelector('UL');
+      var listItem = document.createElement('LI');
+      listItem.textContent = 'List item created';
+      list.appendChild(listItem);
+    }
+
+    console.log('Calling setTimeout');
+    setTimeout(createListItem, 3000);
+  </script>
+</body>
+</html>

@@ -6,6 +6,7 @@ pageCache      = {}
 createDocument = null
 requestMethod  = document.cookie.match(/request_method=(\w+)/)?[1].toUpperCase() or ''
 xhr            = null
+timeouts       = []
 
 
 fetchReplacement = (url) ->
@@ -73,6 +74,11 @@ changePage = (title, body, csrfToken, runScripts) ->
   document.documentElement.replaceChild body, document.body
   CSRFToken.update csrfToken if csrfToken?
   removeNoscriptTags()
+
+  # Cancel any pending calls to setTimeout
+  clearTimeout(timeout) for timeout in timeouts
+  timeouts.length = 0
+
   executeScriptTags() if runScripts
   currentState = window.history.state
   triggerEvent 'page:change'
@@ -282,6 +288,13 @@ initializeTurbolinks = ->
       else
         visit event.target.location.href
   , false
+
+  # Monkeypatch window.setTimeout to cache timeout IDs and reset them on page changes
+  origSetTimeout = window.setTimeout
+  window.setTimeout = ->
+    timeout = origSetTimeout.apply(window, arguments)
+    timeouts.push(timeout)
+    timeout
 
 browserSupportsPushState =
   window.history and window.history.pushState and window.history.replaceState and window.history.state != undefined
