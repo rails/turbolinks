@@ -1,13 +1,15 @@
-cacheSize      = 10
-currentState   = null
-referer        = null
-loadedAssets   = null
-pageCache      = {}
-createDocument = null
-requestMethod  = document.cookie.match(/request_method=(\w+)/)?[1].toUpperCase() or ''
-xhr            = null
-timeouts       = []
-intervals      = []
+cacheSize       = 10
+currentState    = null
+referer         = null
+loadedAssets    = null
+pageCache       = {}
+createDocument  = null
+requestMethod   = document.cookie.match(/request_method=(\w+)/)?[1].toUpperCase() or ''
+xhr             = null
+timeouts        = []
+origSetTimeout  = null
+intervals       = []
+origSetInterval = null
 
 fetchReplacement = (url) ->
   triggerEvent 'page:fetch', url: url
@@ -326,9 +328,21 @@ else
   visit = (url) ->
     document.location.href = url
 
+restoreSetTimeout = ->
+  window.setTimeout = origSetTimeout
+
+restoreSetInterval = ->
+  window.setInterval = origSetInterval
+
 # Public API
 #   Turbolinks.visit(url)
 #   Turbolinks.pagesCached()
 #   Turbolinks.pagesCached(20)
 #   Turbolinks.supported
-@Turbolinks = { visit, pagesCached, supported: browserSupportsTurbolinks }
+@Turbolinks = {
+  visit,
+  pagesCached,
+  restoreSetTimeout,
+  restoreSetInterval,
+  supported: browserSupportsTurbolinks
+}

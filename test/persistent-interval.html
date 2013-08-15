@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Home</title>
+  <script type="text/javascript" src="/js/turbolinks.js?2" data-turbolinks-track="true"></script>
+  <script type="text/javascript">
+    var counter = 1;
+
+    function getTicker() {
+      return document.getElementById('ticker');
+    }
+
+    function incrementTicker() {
+      getTicker().textContent = counter++;
+    }
+
+    window.addEventListener("load", function() {
+      console.log("Calling setInterval");
+      setInterval(incrementTicker, 1000);
+    });
+
+    document.addEventListener("page:change", function() {
+      console.log("page changed");
+      getTicker().textContent = counter;
+
+      var pre = document.getElementById("set-timeout-and-set-interval");
+      pre.textContent = setTimeout.toString() + "\n" + setInterval.toString();
+    });
+
+    document.addEventListener("page:update", function() {
+      console.log("page updated");
+    });
+
+    Turbolinks.restoreSetTimeout();
+    Turbolinks.restoreSetInterval();
+  </script>
+</head>
+<body class="page-interval">
+  <p>
+    The "ticker" on this page should continually increment depsite page changes.
+    To test it, click on the 'This page' link several times and verify that it
+    keeps counting. (This will only work on this page as it forces a reload when
+    navigating from other pages.)
+  </p>
+
+  <p>Sanity check (these should look like native methods):</p>
+
+  <pre id="set-timeout-and-set-interval"></pre>
+
+  <ul>
+    <li><a href="/persistent-interval.html">This page</a> (click here a few times)</li>
+    <li><a href="/index.html">Home</a></li>
+  </ul>
+
+  <div>
+    Ticker: <span id="ticker"></span>
+  </div>
+</body>
+</html>
