@@ -17,7 +17,11 @@
 *   Expire `request_method` cookie after reading it.
 
     *Nick Reed*
-    
+
+*   Trigger `page:fetch` and `page:receive` events also when we fetch page from history.
+
+    *Marek Labos*
+
 ## Turbolinks 1.3.0 (July 11, 2013) ##
 
 *   Change URL *after* fetching page.
