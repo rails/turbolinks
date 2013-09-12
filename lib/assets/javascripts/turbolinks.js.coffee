@@ -9,7 +9,7 @@ createDocument = null
 xhr            = null
 
 
-fetchReplacement = (url) ->  
+fetchReplacement = (url) ->
   rememberReferer()
   cacheCurrentPage()
   triggerEvent 'page:fetch', url: url
@@ -40,7 +40,9 @@ fetchReplacement = (url) ->
 
 fetchHistory = (cachedPage) ->
   cacheCurrentPage()
+  triggerEvent 'page:fetch', url: cachedPage.url
   xhr?.abort()
+  triggerEvent 'page:receive'
   changePage cachedPage.title, cachedPage.body
   recallScrollPosition cachedPage
   triggerEvent 'page:restore'
