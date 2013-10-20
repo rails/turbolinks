@@ -151,7 +151,7 @@ processResponse = ->
     xhr.getResponseHeader('Content-Type').match /^(?:text\/html|application\/xhtml\+xml|application\/xml)(?:;|$)/
 
   extractTrackAssets = (doc) ->
-    (node.src || node.href) for node in doc.head.childNodes when node.getAttribute?('data-turbolinks-track')?
+    (node.getAttribute('src') || node.getAttribute('href')) for node in doc.head.childNodes when node.getAttribute?('data-turbolinks-track')?
 
   assetsChanged = (doc) ->
     loadedAssets ||= extractTrackAssets document
