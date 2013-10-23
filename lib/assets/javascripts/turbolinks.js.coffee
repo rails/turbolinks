@@ -9,7 +9,18 @@ createDocument = null
 xhr            = null
 
 
-fetchReplacement = (url) ->  
+fetchReplacement = (url) ->
+  console.log 'THE CONDITION is  ' + window.ContextManager.targetPageIsCached
+  if window.ContextManager.targetPageIsCached is true
+    console.log "ABORTING TURBOLINKS!!!!!!!!!!!!!!!!!!!!!!: " + ContextManager.isPageFromCache
+    console.log "URL IS: " + url
+    xhr?.abort()
+    xhr = null
+    return
+  else
+    console.log('TURBOLINKS continue :) !: ' + url);
+    console.log('first_async!: ' + ContextManager.isPageFromCache);
+
   rememberReferer()
   cacheCurrentPage()
   triggerEvent 'page:fetch', url: url
@@ -242,7 +253,7 @@ crossOriginLink = (link) ->
 
 anchoredLink = (link) ->
   ((link.hash and removeHash(link)) is removeHash(location)) or
-    (link.href is location.href + '#')
+  (link.href is location.href + '#')
 
 nonHtmlLink = (link) ->
   url = removeHash link
