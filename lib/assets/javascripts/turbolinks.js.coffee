@@ -25,8 +25,8 @@ fetchReplacement = (url) ->
 
     if doc = processResponse()
       reflectNewUrl url
-      changePage extractTitleAndBody(doc)...
       reflectRedirectedUrl()
+      changePage extractTitleAndBody(doc)...
       resetScrollPosition()
       triggerEvent 'page:load'
     else

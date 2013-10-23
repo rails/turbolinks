@@ -11,6 +11,14 @@ map "/js" do
   run Assets
 end
 
+map "/redirect.html" do
+  run lambda { |env| [302, { "Content-Type" => "text/html", "Location" => "/redirect_target.html" }, []] }
+end
+
+map "/redirect_target.html" do
+  run Rack::File.new(File.expand_path("../redirect_target.html", __FILE__), {"X-XHR-Redirected-To" => "/redirect_target.html"})
+end
+
 map "/500" do
   # throw Internal Server Error (500)
 end
