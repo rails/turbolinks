@@ -182,7 +182,14 @@ Favicon =
   update: (latest) ->
     current = @get()
     if current.href? and latest? and current.href isnt latest
-      current.node.setAttribute 'href', latest
+      link = document.createElement("link")
+      link.type = "image/x-icon"
+      link.rel = current.node.getAttribute("rel")
+      link.href = latest
+
+      parentNode = current.node.parentNode
+      parentNode.removeChild(current.node)
+      parentNode.appendChild(link)
 
 CSRFToken =
   get: (doc = document) ->
