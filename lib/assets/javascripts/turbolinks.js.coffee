@@ -9,7 +9,7 @@ createDocument = null
 xhr            = null
 
 
-fetchReplacement = (url) ->  
+fetchReplacement = (url) ->
   rememberReferer()
   cacheCurrentPage()
   triggerEvent 'page:fetch', url: url
@@ -41,7 +41,7 @@ fetchReplacement = (url) ->
 fetchHistory = (cachedPage) ->
   cacheCurrentPage()
   xhr?.abort()
-  changePage cachedPage.title, cachedPage.body
+  changePage cachedPage.title, cachedPage.icon, cachedPage.body
   recallScrollPosition cachedPage
   triggerEvent 'page:restore'
 
@@ -51,6 +51,7 @@ cacheCurrentPage = ->
     url:       document.location.href,
     body:      document.body,
     title:     document.title,
+    icon:      Favicon.get().href,
     positionY: window.pageYOffset,
     positionX: window.pageXOffset
 
@@ -64,9 +65,10 @@ constrainPageCacheTo = (limit) ->
     pageCache[key] = null if key <= currentState.position - limit
   return
 
-changePage = (title, body, csrfToken, runScripts) ->
+changePage = (title, icon, body, csrfToken, runScripts) ->
   document.title = title
   document.documentElement.replaceChild body, document.body
+  Favicon.update icon if icon?
   CSRFToken.update csrfToken if csrfToken?
   removeNoscriptTags()
   executeScriptTags() if runScripts
@@ -170,7 +172,17 @@ processResponse = ->
 
 extractTitleAndBody = (doc) ->
   title = doc.querySelector 'title'
-  [ title?.textContent, doc.body, CSRFToken.get(doc).token, 'runScripts' ]
+  [ title?.textContent, Favicon.get(doc).href, doc.body, CSRFToken.get(doc).token, 'runScripts' ]
+
+Favicon =
+  get: (doc = document) ->
+    node:  tag = doc.querySelector 'link[rel="shortcut icon"]'
+    href:  tag?.getAttribute? 'href'
+
+  update: (latest) ->
+    current = @get()
+    if current.href? and latest? and current.href isnt latest
+      current.node.setAttribute 'href', latest
 
 CSRFToken =
   get: (doc = document) ->
