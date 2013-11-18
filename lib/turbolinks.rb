@@ -53,7 +53,7 @@ module Turbolinks
     def redirect_via_turbolinks_to(url = {}, response_status = {})
       redirect_to(url, response_status)
 
-      if request.format.include? 'javascript'
+      if request.headers['X-Requested-With'].eql? 'XMLHttpRequest'
 	      self.status           = 200
 	      self.response_body    = "Turbolinks.visit('#{location}');"
 	      response.content_type = Mime::JS
