@@ -9,7 +9,7 @@ createDocument = null
 xhr            = null
 
 
-fetchReplacement = (url) ->  
+fetchReplacement = (url) ->
   rememberReferer()
   cacheCurrentPage()
   triggerEvent 'page:fetch', url: url
@@ -281,8 +281,10 @@ installHistoryChangeHandler = (event) ->
   if event.state?.turbolinks
     if cachedPage = pageCache[event.state.position]
       fetchHistory cachedPage
-    else
+    else if !meta || meta.lastPopstate != "fancybox"
       visit event.target.location.href
+    else
+      meta.lastPushState = ""
 
 initializeTurbolinks = ->
   rememberCurrentUrl()
