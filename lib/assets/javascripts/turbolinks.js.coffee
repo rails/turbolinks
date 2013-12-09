@@ -302,9 +302,10 @@ requestMethodIsSafe =
 
 browserSupportsTurbolinks = browserSupportsPushState and browserIsntBuggy and requestMethodIsSafe
 
+installDocumentReadyPageEventTriggers()
+installJqueryAjaxSuccessPageUpdateTrigger()
+
 if browserSupportsTurbolinks
-  installDocumentReadyPageEventTriggers()
-  installJqueryAjaxSuccessPageUpdateTrigger()
   visit = fetchReplacement
   initializeTurbolinks()
 else
