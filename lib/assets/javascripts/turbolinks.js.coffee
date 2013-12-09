@@ -60,15 +60,15 @@ pagesCached = (size = cacheSize) ->
   cacheSize = parseInt(size) if /^[\d]+$/.test size
 
 constrainPageCacheTo = (limit) ->
-  for own key, value of pageCache
-    pageCache[key] = null if key <= currentState.position - limit
+  for own key, value of pageCache when key <= currentState.position - limit
+    triggerEvent 'page:expire', pageCache[key]
+    pageCache[key] = null
   return
 
 changePage = (title, body, csrfToken, runScripts) ->
   document.title = title
   document.documentElement.replaceChild body, document.body
   CSRFToken.update csrfToken if csrfToken?
-  removeNoscriptTags()
   executeScriptTags() if runScripts
   currentState = window.history.state
   triggerEvent 'page:change'
@@ -85,10 +85,9 @@ executeScriptTags = ->
     parentNode.insertBefore copy, nextSibling
   return
 
-removeNoscriptTags = ->
-  noscriptTags = Array::slice.call document.body.getElementsByTagName 'noscript'
-  noscript.parentNode.removeChild noscript for noscript in noscriptTags
-  return
+removeNoscriptTags = (node) ->
+  node.innerHTML = node.innerHTML.replace /<noscript[\S\s]*?<\/noscript>/ig, ''
+  node
 
 reflectNewUrl = (url) ->
   if url isnt referer
@@ -170,7 +169,7 @@ processResponse = ->
 
 extractTitleAndBody = (doc) ->
   title = doc.querySelector 'title'
-  [ title?.textContent, doc.body, CSRFToken.get(doc).token, 'runScripts' ]
+  [ title?.textContent, removeNoscriptTags(doc.body), CSRFToken.get(doc).token, 'runScripts' ]
 
 CSRFToken =
   get: (doc = document) ->
