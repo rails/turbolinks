@@ -10,7 +10,7 @@ createDocument = null
 xhr            = null
 
 
-fetchReplacement = (url) ->  
+fetchReplacement = (url) ->
   rememberReferer()
   cacheCurrentPage()
   triggerEvent 'page:fetch', url: url
@@ -269,10 +269,14 @@ allowLinkExtensions = (extensions...) ->
   htmlExtensions
 
 installDocumentReadyPageEventTriggers = ->
-  document.addEventListener 'DOMContentLoaded', ( ->
+  triggerDocumentReadyPageEvents = ->
     triggerEvent 'page:change'
     triggerEvent 'page:update'
-  ), true
+
+  if document.addEventListener?
+    document.addEventListener 'DOMContentLoaded', triggerDocumentReadyPageEvents, true
+  else if document.attachEvent?
+    document.attachEvent 'onreadystatechange', triggerDocumentReadyPageEvents
 
 installJqueryAjaxSuccessPageUpdateTrigger = ->
   if typeof jQuery isnt 'undefined'
