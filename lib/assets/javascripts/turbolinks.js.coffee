@@ -272,7 +272,7 @@ installDocumentReadyPageEventTriggers = ->
   if document.addEventListener?
     document.addEventListener 'DOMContentLoaded', triggerDocumentReadyPageEvents, true
   else if document.attachEvent?
-    document.attachEvent 'DOMContentLoaded', triggerDocumentReadyPageEvents
+    document.attachEvent 'onreadystatechange', triggerDocumentReadyPageEvents
 
 installJqueryAjaxSuccessPageUpdateTrigger = ->
   if typeof jQuery isnt 'undefined'
