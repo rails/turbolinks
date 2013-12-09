@@ -265,10 +265,14 @@ ignoreClick = (event, link) ->
 
 
 installDocumentReadyPageEventTriggers = ->
-  document.addEventListener 'DOMContentLoaded', ( ->
+  triggerDocumentReadyPageEvents = ->
     triggerEvent 'page:change'
     triggerEvent 'page:update'
-  ), true
+
+  if document.addEventListener?
+    document.addEventListener 'DOMContentLoaded', triggerDocumentReadyPageEvents, true
+  else if document.attachEvent?
+    document.attachEvent 'DOMContentLoaded', triggerDocumentReadyPageEvents
 
 installJqueryAjaxSuccessPageUpdateTrigger = ->
   if typeof jQuery isnt 'undefined'
