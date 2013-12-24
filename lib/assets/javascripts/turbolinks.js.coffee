@@ -97,7 +97,9 @@ reflectNewUrl = (url) ->
 reflectRedirectedUrl = ->
   if location = xhr.getResponseHeader 'X-XHR-Redirected-To'
     preservedHash = if removeHash(location) is location then document.location.hash else ''
-    window.history.replaceState currentState, '', location + preservedHash
+    host = new RegExp(window.location.host)
+    if location.match(host)
+      window.history.replaceState currentState, '', location + preservedHash
 
 rememberReferer = ->
   referer = document.location.href
