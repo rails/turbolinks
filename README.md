@@ -55,6 +55,8 @@ Turbolinks.pagesCached();
 Turbolinks.pagesCached(20);
 ```
 
+When a page is removed from the cache due to the cache reaching its size limit, the `page:expire` event is triggered.  Listeners bound to this event can access the cached page object using `event.originalEvent.data`.  Keys of note for this page cache object include `url`, `body`, and `title`.  
+
 To implement a client-side spinner, you could listen for `page:fetch` to start it and `page:receive` to stop it.
 
     document.addEventListener("page:fetch", startSpinner);
@@ -89,7 +91,13 @@ By default, all internal HTML links will be funneled through Turbolinks, but you
 </div>
 ```
 
-Note that internal links to files containing a file extension other than **.html** will automatically be opted out of Turbolinks. So links to /images/panda.gif will just work as expected.
+Note that internal links to files containing a file extension other than **.html** will automatically be opted out of Turbolinks. So links to /images/panda.gif will just work as expected.  To whitelist additional file extensions to be processed by Turbolinks, use `Turbolinks.allowLinkExtensions()`.
+
+```javascript
+Turbolinks.allowLinkExtensions();                 // => ['html']
+Turbolinks.allowLinkExtensions('md');             // => ['html', 'md']
+Turbolinks.allowLinkExtensions('coffee', 'scss'); // => ['html', 'md', 'coffee', 'scss']
+```
 
 Also, Turbolinks is installed as the last click handler for links. So if you install another handler that calls event.preventDefault(), Turbolinks will not run. This ensures that you can safely use Turbolinks with stuff like `data-method`, `data-remote`, or `data-confirm` from Rails.
 

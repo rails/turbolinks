@@ -2,6 +2,7 @@ pageCache      = {}
 cacheSize      = 10
 currentState   = null
 loadedAssets   = null
+htmlExtensions = ['html']
 
 referer        = null
 
@@ -61,8 +62,9 @@ pagesCached = (size = cacheSize) ->
   cacheSize = parseInt(size) if /^[\d]+$/.test size
 
 constrainPageCacheTo = (limit) ->
-  for own key, value of pageCache
-    pageCache[key] = null if key <= currentState.position - limit
+  for own key, value of pageCache when key <= currentState.position - limit
+    triggerEvent 'page:expire', pageCache[key]
+    pageCache[key] = null
   return
 
 changePage = (title, icon, body, csrfToken, runScripts) ->
@@ -70,7 +72,6 @@ changePage = (title, icon, body, csrfToken, runScripts) ->
   document.documentElement.replaceChild body, document.body
   Favicon.update icon if icon?
   CSRFToken.update csrfToken if csrfToken?
-  removeNoscriptTags()
   executeScriptTags() if runScripts
   currentState = window.history.state
   triggerEvent 'page:change'
@@ -87,10 +88,9 @@ executeScriptTags = ->
     parentNode.insertBefore copy, nextSibling
   return
 
-removeNoscriptTags = ->
-  noscriptTags = Array::slice.call document.body.getElementsByTagName 'noscript'
-  noscript.parentNode.removeChild noscript for noscript in noscriptTags
-  return
+removeNoscriptTags = (node) ->
+  node.innerHTML = node.innerHTML.replace /<noscript[\S\s]*?<\/noscript>/ig, ''
+  node
 
 reflectNewUrl = (url) ->
   if url isnt referer
@@ -172,7 +172,7 @@ processResponse = ->
 
 extractTitleAndBody = (doc) ->
   title = doc.querySelector 'title'
-  [ title?.textContent, Favicon.get(doc).href, doc.body, CSRFToken.get(doc).token, 'runScripts' ]
+  [ title?.textContent, Favicon.get(doc).href, removeNoscriptTags(doc.body), CSRFToken.get(doc).token, 'runScripts' ]
 
 Favicon =
   get: (doc = document) ->
@@ -266,7 +266,7 @@ anchoredLink = (link) ->
 
 nonHtmlLink = (link) ->
   url = removeHash link
-  url.match(/\.[a-z]+(\?.*)?$/g) and not url.match(/\.html?(\?.*)?$/g)
+  url.match(/\.[a-z]+(\?.*)?$/g) and not url.match(new RegExp("\\.(?:#{htmlExtensions.join('|')})?(\\?.*)?$", 'g'))
 
 noTurbolink = (link) ->
   until ignore or link is document
@@ -283,6 +283,9 @@ nonStandardClick = (event) ->
 ignoreClick = (event, link) ->
   crossOriginLink(link) or anchoredLink(link) or nonHtmlLink(link) or noTurbolink(link) or targetLink(link) or nonStandardClick(event)
 
+allowLinkExtensions = (extensions...) ->
+  htmlExtensions.push extension for extension in extensions
+  htmlExtensions
 
 installDocumentReadyPageEventTriggers = ->
   document.addEventListener 'DOMContentLoaded', ( ->
@@ -311,8 +314,12 @@ initializeTurbolinks = ->
   document.addEventListener 'click', installClickHandlerLast, true
   window.addEventListener 'popstate', installHistoryChangeHandler, false
 
+# Handle bug in Firefox 26 where history.state is initially undefined
+historyStateIsDefined =
+  window.history.state != undefined or navigator.userAgent.match /Firefox\/26/
+
 browserSupportsPushState =
-  window.history and window.history.pushState and window.history.replaceState and window.history.state != undefined
+  window.history and window.history.pushState and window.history.replaceState and historyStateIsDefined
 
 browserIsntBuggy =
   !navigator.userAgent.match /CriOS\//
@@ -322,8 +329,12 @@ requestMethodIsSafe =
 
 browserSupportsTurbolinks = browserSupportsPushState and browserIsntBuggy and requestMethodIsSafe
 
-installDocumentReadyPageEventTriggers()
-installJqueryAjaxSuccessPageUpdateTrigger()
+browserSupportsCustomEvents =
+  document.addEventListener and document.createEvent
+
+if browserSupportsCustomEvents
+  installDocumentReadyPageEventTriggers()
+  installJqueryAjaxSuccessPageUpdateTrigger()
 
 if browserSupportsTurbolinks
   visit = fetchReplacement
@@ -335,5 +346,6 @@ else
 #   Turbolinks.visit(url)
 #   Turbolinks.pagesCached()
 #   Turbolinks.pagesCached(20)
+#   Turbolinks.allowLinkExtensions('md')
 #   Turbolinks.supported
-@Turbolinks = { visit, pagesCached, supported: browserSupportsTurbolinks }
+@Turbolinks = { visit, pagesCached, allowLinkExtensions, supported: browserSupportsTurbolinks }
