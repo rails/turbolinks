@@ -67,6 +67,8 @@ DOM transformations that are idempotent are best. If you have transformations th
 Transition Cache: A Speed Boost
 -------------------------------------
 
+**Note: Transition cache is only available on master. To enable the feature, you must point the turbolinks gem to master: `gem "turbolinks", github: "rails/turbolinks"`**
+
 Transition Cache is an experimental feature that makes loading cached pages instanteneous. Once a user has visited a page, returning later to the page results in an instant load.
 
 For example, if Page A is already cached by Turbolinks and you are on Page B, clicking a link to Page A will *immediately* display the cached copy of Page A. Turbolinks will then fetch Page A from the server and replace the cached page once the new copy is returned.
