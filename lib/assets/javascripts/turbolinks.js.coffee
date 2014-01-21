@@ -47,7 +47,7 @@ fetchReplacement = (url, onLoadFunction = =>) ->
       reflectRedirectedUrl()
       onLoadFunction()
       triggerEvent 'page:load'
-    else
+    else if document.location.href != url
       document.location.href = url
 
   xhr.onloadend = -> xhr = null
