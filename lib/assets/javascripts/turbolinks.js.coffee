@@ -17,7 +17,7 @@ fetch = (url) ->
   cacheCurrentPage()
   reflectNewUrl url
 
-  if transitionCacheEnabled and cachedPage = transitionCacheFor(url)
+  if transitionCacheEnabled and cachedPage = transitionCacheFor(document.location.href)
     fetchHistory cachedPage
     fetchReplacement url
   else
@@ -63,7 +63,7 @@ fetchHistory = (cachedPage) ->
 
 
 cacheCurrentPage = ->
-  pageCache[currentState.url] =
+  pageCache[document.location.href] =
     url:                      document.location.href,
     body:                     document.body,
     title:                    document.title,
