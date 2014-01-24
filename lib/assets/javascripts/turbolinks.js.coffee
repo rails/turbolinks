@@ -11,6 +11,7 @@ referer                 = null
 createDocument          = null
 xhr                     = null
 
+ignoreInitalRequest = true
 
 fetch = (url) ->
   rememberReferer()
@@ -307,8 +308,9 @@ installHistoryChangeHandler = (event) ->
     if cachedPage = pageCache[event.state.url]
       cacheCurrentPage()
       fetchHistory cachedPage
-    else
+    else if ! ignoreInitalRequest
       visit event.target.location.href
+  ignoreInitalRequest = false
 
 initializeTurbolinks = ->
   rememberCurrentUrl()
