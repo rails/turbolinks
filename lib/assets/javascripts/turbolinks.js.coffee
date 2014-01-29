@@ -30,7 +30,7 @@ transitionCacheFor = (url) ->
 enableTransitionCache = (enable = true) ->
   transitionCacheEnabled = enable
 
-fetchReplacement = (url, onLoadFunction = =>) ->  
+fetchReplacement = (url, onLoadFunction = =>) ->
   triggerEvent 'page:fetch', url: url
 
   xhr?.abort()
@@ -43,7 +43,7 @@ fetchReplacement = (url, onLoadFunction = =>) ->
     triggerEvent 'page:receive'
 
     if doc = processResponse()
-      changePage extractTitleAndBody(doc)...
+      changePage extractDocumentAttributes(doc)...
       reflectRedirectedUrl()
       onLoadFunction()
       triggerEvent 'page:load'
@@ -57,7 +57,7 @@ fetchReplacement = (url, onLoadFunction = =>) ->
 
 fetchHistory = (cachedPage) ->
   xhr?.abort()
-  changePage cachedPage.title, cachedPage.body
+  changePage cachedPage.className, cachedPage.title, cachedPage.body
   recallScrollPosition cachedPage
   triggerEvent 'page:restore'
 
@@ -67,6 +67,7 @@ cacheCurrentPage = ->
     url:                      document.location.href,
     body:                     document.body,
     title:                    document.title,
+    className:                document.documentElement.className,
     positionY:                window.pageYOffset,
     positionX:                window.pageXOffset,
     cachedAt:                 new Date().getTime(),
@@ -88,8 +89,9 @@ constrainPageCacheTo = (limit) ->
     triggerEvent 'page:expire', pageCache[key]
     delete pageCache[key]
 
-changePage = (title, body, csrfToken, runScripts) ->
+changePage = (className, title, body, csrfToken, runScripts) ->
   document.title = title
+  document.documentElement.className = className
   document.documentElement.replaceChild body, document.body
   CSRFToken.update csrfToken if csrfToken?
   executeScriptTags() if runScripts
@@ -190,9 +192,10 @@ processResponse = ->
     if doc and !assetsChanged doc
       return doc
 
-extractTitleAndBody = (doc) ->
+extractDocumentAttributes = (doc) ->
   title = doc.querySelector 'title'
-  [ title?.textContent, removeNoscriptTags(doc.body), CSRFToken.get(doc).token, 'runScripts' ]
+  docElement = doc.documentElement
+  [ docElement.className, title?.textContent, removeNoscriptTags(doc.body), CSRFToken.get(doc).token, 'runScripts' ]
 
 CSRFToken =
   get: (doc = document) ->
