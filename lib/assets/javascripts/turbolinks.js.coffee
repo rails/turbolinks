@@ -48,6 +48,8 @@ fetchReplacement = (url, onLoadFunction = =>) ->
       onLoadFunction()
       triggerEvent 'page:load'
     else
+      # for cross origin redirect
+      url = xhr.getResponseHeader('Location') or url
       document.location.href = url
 
   xhr.onloadend = -> xhr = null
