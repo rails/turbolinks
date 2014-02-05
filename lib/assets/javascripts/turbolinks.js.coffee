@@ -17,7 +17,7 @@ fetch = (url) ->
   cacheCurrentPage()
   reflectNewUrl url
 
-  if transitionCacheEnabled and cachedPage = transitionCacheFor(document.location.href)
+  if transitionCacheEnabled and cachedPage = transitionCacheFor(absoluteUrl(url))
     fetchHistory cachedPage
     fetchReplacement url
   else
@@ -63,7 +63,7 @@ fetchHistory = (cachedPage) ->
 
 
 cacheCurrentPage = ->
-  pageCache[document.location.href] =
+  pageCache[absoluteUrl(currentState.url)] =
     url:                      document.location.href,
     body:                     document.body,
     title:                    document.title,
@@ -139,6 +139,9 @@ resetScrollPosition = ->
   else
     window.scrollTo 0, 0
 
+absoluteUrl = (url) ->
+  (link = document.createElement 'a').href = url
+  link.href
 
 # Intention revealing function alias
 removeHashForIE10compatiblity = (url) ->
