@@ -11,18 +11,20 @@ createDocument          = null
 xhr                     = null
 
 
-fetch = (url) ->
+fetch = (url, replaceContents = [], callback) ->
   url = new ComponentUrl url
 
   rememberReferer()
-  cacheCurrentPage()
+  cacheCurrentPage() if transitionCacheEnabled
   reflectNewUrl url
 
   if transitionCacheEnabled and cachedPage = transitionCacheFor(url.absolute)
     fetchHistory cachedPage
-    fetchReplacement url
+    fetchReplacement url, null, replaceContents
   else
-    fetchReplacement url, resetScrollPosition
+    fetchReplacement url, ->
+      resetScrollPosition() unless replaceContents.length
+      callback?()
 
 transitionCacheFor = (url) ->
   cachedPage = pageCache[url]
@@ -31,7 +33,7 @@ transitionCacheFor = (url) ->
 enableTransitionCache = (enable = true) ->
   transitionCacheEnabled = enable
 
-fetchReplacement = (url, onLoadFunction = =>) ->  
+fetchReplacement = (url, callback, replaceContents) ->
   triggerEvent 'page:fetch', url: url.absolute
 
   xhr?.abort()
@@ -44,10 +46,10 @@ fetchReplacement = (url, onLoadFunction = =>) ->
     triggerEvent 'page:receive'
 
     if doc = processResponse()
-      changePage extractTitleAndBody(doc)...
+      nodes = changePage(extractTitleAndBody(doc)..., replaceContents)
       reflectRedirectedUrl()
-      onLoadFunction()
-      triggerEvent 'page:load'
+      triggerEvent 'page:load', nodes
+      callback?()
     else
       document.location.href = url.absolute
 
@@ -91,7 +93,10 @@ constrainPageCacheTo = (limit) ->
     triggerEvent 'page:expire', pageCache[key]
     delete pageCache[key]
 
-changePage = (title, body, csrfToken, runScripts) ->
+changePage = (title, body, csrfToken, runScripts, replaceContents = []) ->
+  if replaceContents.length
+    return refreshNodesWithKeys(replaceContents, body)
+
   document.title = title
   document.documentElement.replaceChild body, document.body
   CSRFToken.update csrfToken if csrfToken?
@@ -99,6 +104,20 @@ changePage = (title, body, csrfToken, runScripts) ->
   currentState = window.history.state
   triggerEvent 'page:change'
   triggerEvent 'page:update'
+  return
+
+refreshNodesWithKeys = (keys, body) ->
+  oldNodes = (node for node in document.querySelectorAll("[refresh-always]"))
+
+  for key in keys
+    nodes.push(node) for node in document.querySelectorAll("[refresh=#{key}]")
+
+  triggerEvent 'page:before-partial-replace', oldNodes
+
+  for existingNode in oldNodes
+    newNode = body.querySelector("#" + existingNode.getAttribute('id'))
+    existingNode.parentNode.replaceChild(newNode, existingNode)
+    newNode
 
 executeScriptTags = ->
   scripts = Array::slice.call document.body.querySelectorAll 'script:not([data-turbolinks-eval="false"])'
