@@ -93,7 +93,8 @@ constrainPageCacheTo = (limit) ->
 
 changePage = (title, body, csrfToken, runScripts) ->
   document.title = title
-  document.documentElement.replaceChild body, document.body
+  if triggerEvent 'page:replace', html: body
+    document.documentElement.replaceChild body, document.body
   CSRFToken.update csrfToken if csrfToken?
   executeScriptTags() if runScripts
   currentState = window.history.state
