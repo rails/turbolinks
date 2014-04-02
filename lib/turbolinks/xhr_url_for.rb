@@ -8,8 +8,13 @@ module Turbolinks
     end
  
     def url_for_with_xhr_referer(options = {})
-      options = (controller.request.headers["X-XHR-Referer"] || options) if options == :back
+      options = (xhr_referer || options) if options == :back
       url_for_without_xhr_referer options
     end
+
+    private
+      def xhr_referer
+        controller.request.headers["X-XHR-Referer"]
+      end
   end
 end
