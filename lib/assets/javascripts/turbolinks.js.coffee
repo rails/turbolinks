@@ -47,7 +47,7 @@ fetchReplacement = (url, onLoadFunction = =>) ->
       changePage extractTitleAndBody(doc)...
       reflectRedirectedUrl()
       onLoadFunction()
-      triggerEvent 'page:load'
+      triggerEvent 'page:load', xhr
     else
       document.location.href = url.absolute
 
