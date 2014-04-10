@@ -31,7 +31,7 @@ transitionCacheFor = (url) ->
 enableTransitionCache = (enable = true) ->
   transitionCacheEnabled = enable
 
-fetchReplacement = (url, onLoadFunction = =>) ->  
+fetchReplacement = (url, onLoadFunction = =>) ->
   triggerEvent 'page:fetch', url: url.absolute
 
   xhr?.abort()
@@ -95,21 +95,42 @@ changePage = (title, body, csrfToken, runScripts) ->
   document.title = title
   document.documentElement.replaceChild body, document.body
   CSRFToken.update csrfToken if csrfToken?
-  executeScriptTags() if runScripts
   currentState = window.history.state
+  if runScripts
+    executeScriptTags triggerPageLoadEvents
+  else
+    triggerPageLoadEvents()
+
+triggerPageLoadEvents = ->
   triggerEvent 'page:change'
   triggerEvent 'page:update'
 
-executeScriptTags = ->
-  scripts = Array::slice.call document.body.querySelectorAll 'script:not([data-turbolinks-eval="false"])'
-  for script in scripts when script.type in ['', 'text/javascript']
+executeScriptTags = (callback = ->) ->
+  executedScripts = []
+  scriptsToExecute = getScriptsOnPage()
+
+  addScriptToLoadQueue = (script, callback = ->) ->
+    if script.src
+      script.onload = ->
+        callback() if scriptsToExecute.length == executedScripts.push(script)
+    else
+      callback() if scriptsToExecute.length == executedScripts.push(script)
+
+  for script in scriptsToExecute
     copy = document.createElement 'script'
     copy.setAttribute attr.name, attr.value for attr in script.attributes
     copy.appendChild document.createTextNode script.innerHTML
+    addScriptToLoadQueue(copy, callback)
     { parentNode, nextSibling } = script
     parentNode.removeChild script
     parentNode.insertBefore copy, nextSibling
   return
+
+getScriptsOnPage = ->
+  scripts = []
+  for script in Array::slice.call document.body.querySelectorAll 'script:not([data-turbolinks-eval="false"])'
+    scripts.push(script) if script.type in ['', 'text/javascript']
+  scripts
 
 removeNoscriptTags = (node) ->
   node.innerHTML = node.innerHTML.replace /<noscript[\S\s]*?<\/noscript>/ig, ''
@@ -142,7 +163,6 @@ resetScrollPosition = ->
     document.location.href = document.location.href
   else
     window.scrollTo 0, 0
-
 
 popCookie = (name) ->
   value = document.cookie.match(new RegExp(name+"=(\\w+)"))?[1].toUpperCase() or ''
@@ -276,18 +296,18 @@ class Link extends ComponentUrl
     super
 
   shouldIgnore: ->
-    @_crossOrigin() or 
-      @_anchored() or 
-      @_nonHtml() or 
-      @_optOut() or 
+    @_crossOrigin() or
+      @_anchored() or
+      @_nonHtml() or
+      @_optOut() or
       @_target()
 
   _crossOrigin: ->
     @origin isnt (new ComponentUrl).origin
     
   _anchored: ->
-    ((@hash and @withoutHash()) is (current = new ComponentUrl).withoutHash()) or 
-      (@href is current.href + '#') 
+    ((@hash and @withoutHash()) is (current = new ComponentUrl).withoutHash()) or
+      (@href is current.href + '#')
 
   _nonHtml: ->
     @pathname.match(/\.[a-z]+$/g) and not @pathname.match(new RegExp("\\.(?:#{Link.HTML_EXTENSIONS.join('|')})?$", 'g'))
@@ -321,7 +341,7 @@ class Click
     @_extractLink()
     if @_validForTurbolinks()
       visit @link.href unless pageChangePrevented()
-      @event.preventDefault() 
+      @event.preventDefault()
 
   _extractLink: ->
     link = @event.target
@@ -332,10 +352,10 @@ class Click
     @link? and not (@link.shouldIgnore() or @_nonStandardClick())
 
   _nonStandardClick: ->
-    @event.which > 1 or 
-      @event.metaKey or 
-      @event.ctrlKey or 
-      @event.shiftKey or 
+    @event.which > 1 or
+      @event.metaKey or
+      @event.ctrlKey or
+      @event.shiftKey or
       @event.altKey
 
 
