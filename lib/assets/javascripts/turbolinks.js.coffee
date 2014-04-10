@@ -105,11 +105,12 @@ triggerPageLoadEvents = ->
   triggerEvent 'page:change'
   triggerEvent 'page:update'
 
-executeScriptTags = (callback = ->) ->
+executeScriptTags = (callback) ->
   executedScripts = []
   scriptsToExecute = getScriptsOnPage()
 
-  addScriptToLoadQueue = (script, callback = ->) ->
+  addScriptToLoadQueue = (script, callback) ->
+    return unless typeof callback == 'function'
     if script.src
       script.onload = ->
         callback() if scriptsToExecute.length == executedScripts.push(script)
