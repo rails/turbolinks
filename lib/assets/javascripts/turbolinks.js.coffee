@@ -138,8 +138,8 @@ recallScrollPosition = (page) ->
   window.scrollTo page.positionX, page.positionY
 
 resetScrollPosition = ->
-  if document.location.hash
-    document.location.href = document.location.href
+  if element = document.location.hash and document.getElementById(document.location.hash.replace('#', ''))
+    element.scrollIntoView()
   else
     window.scrollTo 0, 0
 
