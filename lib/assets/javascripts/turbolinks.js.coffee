@@ -31,7 +31,7 @@ transitionCacheFor = (url) ->
 enableTransitionCache = (enable = true) ->
   transitionCacheEnabled = enable
 
-fetchReplacement = (url, onLoadFunction = =>) ->  
+fetchReplacement = (url, onLoadFunction = =>) ->
   triggerEvent 'page:fetch', url: url.absolute
 
   xhr?.abort()
@@ -236,10 +236,10 @@ browserCompatibleDocumentParser = ->
 
 
 # The ComponentUrl class converts a basic URL string into an object
-# that behaves similarly to document.location.  
+# that behaves similarly to document.location.
 #
-# If an instance is created from a relative URL, the current document 
-# is used to fill in the missing attributes (protocol, host, port).  
+# If an instance is created from a relative URL, the current document
+# is used to fill in the missing attributes (protocol, host, port).
 class ComponentUrl
   constructor: (@original = document.location.href) ->
     return @original if @original.constructor is ComponentUrl
@@ -276,18 +276,18 @@ class Link extends ComponentUrl
     super
 
   shouldIgnore: ->
-    @_crossOrigin() or 
-      @_anchored() or 
-      @_nonHtml() or 
-      @_optOut() or 
+    @_crossOrigin() or
+      @_anchored() or
+      @_nonHtml() or
+      @_optOut() or
       @_target()
 
   _crossOrigin: ->
     @origin isnt (new ComponentUrl).origin
-    
+
   _anchored: ->
-    ((@hash and @withoutHash()) is (current = new ComponentUrl).withoutHash()) or 
-      (@href is current.href + '#') 
+    ((@hash and @withoutHash()) is (current = new ComponentUrl).withoutHash()) or
+      (@href is current.href + '#')
 
   _nonHtml: ->
     @pathname.match(/\.[a-z]+$/g) and not @pathname.match(new RegExp("\\.(?:#{Link.HTML_EXTENSIONS.join('|')})?$", 'g'))
@@ -304,9 +304,9 @@ class Link extends ComponentUrl
 
 
 # The Click class handles clicked links, verifying if Turbolinks should
-# take control by inspecting both the event and the link. If it should, 
-# the page change process is initiated. If not, control is passed back 
-# to the browser for default functionality. 
+# take control by inspecting both the event and the link. If it should,
+# the page change process is initiated. If not, control is passed back
+# to the browser for default functionality.
 class Click
   @installHandlerLast: (event) ->
     unless event.defaultPrevented
@@ -321,7 +321,7 @@ class Click
     @_extractLink()
     if @_validForTurbolinks()
       visit @link.href unless pageChangePrevented()
-      @event.preventDefault() 
+      @event.preventDefault()
 
   _extractLink: ->
     link = @event.target
@@ -332,10 +332,10 @@ class Click
     @link? and not (@link.shouldIgnore() or @_nonStandardClick())
 
   _nonStandardClick: ->
-    @event.which > 1 or 
-      @event.metaKey or 
-      @event.ctrlKey or 
-      @event.shiftKey or 
+    @event.which > 1 or
+      @event.metaKey or
+      @event.ctrlKey or
+      @event.shiftKey or
       @event.altKey
 
 
