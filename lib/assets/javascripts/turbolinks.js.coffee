@@ -365,6 +365,9 @@ installHistoryChangeHandler = (event) ->
       visit event.target.location.href
 
 initializeTurbolinks = ->
+  installDocumentReadyPageEventTriggers()
+  installJqueryAjaxSuccessPageUpdateTrigger()
+
   rememberCurrentUrl()
   rememberCurrentState()
   createDocument = browserCompatibleDocumentParser()
@@ -387,14 +390,10 @@ browserIsntBuggy =
 requestMethodIsSafe =
   popCookie('request_method') in ['GET','']
 
-browserSupportsTurbolinks = browserSupportsPushState and browserIsntBuggy and requestMethodIsSafe
+browserSupportsTurbolinks = browserSupportsPushState and browserSupportsCustomEvents and browserIsntBuggy and requestMethodIsSafe
 
 browserSupportsCustomEvents =
   document.addEventListener and document.createEvent
-
-if browserSupportsCustomEvents
-  installDocumentReadyPageEventTriggers()
-  installJqueryAjaxSuccessPageUpdateTrigger()
 
 if browserSupportsTurbolinks
   visit = fetch
