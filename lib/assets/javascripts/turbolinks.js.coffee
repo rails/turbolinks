@@ -416,4 +416,4 @@ else
 #   Turbolinks.enableTransitionCache()
 #   Turbolinks.allowLinkExtensions('md')
 #   Turbolinks.supported
-@Turbolinks = { visit, pagesCached, enableTransitionCache, allowLinkExtensions: Link.allowExtensions, supported: browserSupportsTurbolinks }
+@Turbolinks = { visit, pagesCached, enableTransitionCache, rememberCurrentState, cacheCurrentPage, allowLinkExtensions: Link.allowExtensions, supported: browserSupportsTurbolinks }
