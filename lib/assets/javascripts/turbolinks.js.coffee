@@ -32,29 +32,33 @@ enableTransitionCache = (enable = true) ->
   transitionCacheEnabled = enable
 
 fetchReplacement = (url, onLoadFunction = =>) ->  
-  triggerEvent 'page:fetch', url: url.absolute
+  unless fetchPrevented()
+    triggerEvent 'page:fetch', url: url.absolute
 
-  xhr?.abort()
-  xhr = new XMLHttpRequest
-  xhr.open 'GET', url.withoutHashForIE10compatibility(), true
-  xhr.setRequestHeader 'Accept', 'text/html, application/xhtml+xml, application/xml'
-  xhr.setRequestHeader 'X-XHR-Referer', referer
+    xhr?.abort()
+    xhr = new XMLHttpRequest
+    xhr.open 'GET', url.withoutHashForIE10compatibility(), true
+    xhr.setRequestHeader 'Accept', 'text/html, application/xhtml+xml, application/xml'
+    xhr.setRequestHeader 'X-XHR-Referer', referer
 
-  xhr.onload = ->
-    triggerEvent 'page:receive'
+    xhr.onload = ->
+      triggerEvent 'page:receive'
 
-    if doc = processResponse()
-      changePage extractTitleAndBody(doc)...
-      reflectRedirectedUrl()
-      onLoadFunction()
-      triggerEvent 'page:load'
-    else
-      document.location.href = url.absolute
+      if doc = processResponse()
+        changePage extractTitleAndBody(doc)...
+        reflectRedirectedUrl()
+        onLoadFunction()
+        triggerEvent 'page:load'
+      else
+        document.location.href = url.absolute
 
-  xhr.onloadend = -> xhr = null
-  xhr.onerror   = -> document.location.href = url.absolute
+    xhr.onloadend = -> xhr = null
+    xhr.onerror   = -> document.location.href = url.absolute
 
-  xhr.send()
+    xhr.send()
+
+fetchPrevented = ->
+  !triggerEvent 'page:before-fetch'
 
 fetchHistory = (cachedPage) ->
   xhr?.abort()
