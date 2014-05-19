@@ -10,6 +10,7 @@ referer                 = null
 createDocument          = null
 xhr                     = null
 
+r20                     = /%20/g
 
 fetch = (url) ->
   url = new ComponentUrl url
@@ -20,9 +21,17 @@ fetch = (url) ->
 
   if transitionCacheEnabled and cachedPage = transitionCacheFor(url.absolute)
     fetchHistory cachedPage
-    fetchReplacement url
+    requestReplacement url, 'GET'
   else
-    fetchReplacement url, resetScrollPosition
+    requestReplacement url, 'GET', null, resetScrollPosition
+
+send = (url, method, data) ->
+  url = new ComponentUrl url
+
+  rememberReferer()
+  cacheCurrentPage()
+
+  requestReplacement(url, method.toUpperCase(), data)
 
 transitionCacheFor = (url) ->
   cachedPage = pageCache[url]
@@ -31,14 +40,26 @@ transitionCacheFor = (url) ->
 enableTransitionCache = (enable = true) ->
   transitionCacheEnabled = enable
 
-fetchReplacement = (url, onLoadFunction = =>) ->  
-  triggerEvent 'page:fetch', url: url.absolute
+requestReplacement = (url, method, data, onLoadFunction = =>) ->
+  event = if method is 'GET' then 'page:fetch' else 'page:submit'
+  triggerEvent event, url: url.absolute
 
   xhr?.abort()
   xhr = new XMLHttpRequest
-  xhr.open 'GET', url.withoutHashForIE10compatibility(), true
+  xhr.open method, url.withoutHashForIE10compatibility(), true
   xhr.setRequestHeader 'Accept', 'text/html, application/xhtml+xml, application/xml'
   xhr.setRequestHeader 'X-XHR-Referer', referer
+
+  csrf = CSRFToken.get()
+
+  if method isnt 'GET' and (data or csrf.param)
+    xhr.setRequestHeader 'Content-type', 'application/x-www-form-urlencoded'
+
+    if !data or typeof data is 'string'
+      data = (if data then "#{data}&" else '') + "#{encodeURIComponent csrf.param}=#{encodeURIComponent csrf.token}" if csrf.param
+    else
+      data[csrf.param] = csrf.token if csrf.param
+      data = ("#{encodeURIComponent key}=#{encodeURIComponent value}" for own key, value of data).join('&').replace(r20, '+')
 
   xhr.onload = ->
     triggerEvent 'page:receive'
@@ -48,13 +69,13 @@ fetchReplacement = (url, onLoadFunction = =>) ->
       reflectRedirectedUrl()
       onLoadFunction()
       triggerEvent 'page:load'
-    else
+    else # TODO: when method != GET
       document.location.href = url.absolute
 
   xhr.onloadend = -> xhr = null
-  xhr.onerror   = -> document.location.href = url.absolute
+  xhr.onerror   = -> document.location.href = url.absolute # TODO: when method != GET
 
-  xhr.send()
+  xhr.send(data)
 
 fetchHistory = (cachedPage) ->
   xhr?.abort()
@@ -196,6 +217,7 @@ extractTitleAndBody = (doc) ->
 
 CSRFToken =
   get: (doc = document) ->
+    param:  doc.querySelector('meta[name="csrf-param"]')?.getAttribute('content')
     node:   tag = doc.querySelector 'meta[name="csrf-token"]'
     token:  tag?.getAttribute? 'content'
 
@@ -345,6 +367,83 @@ class Click
       @event.shiftKey or 
       @event.altKey
 
+class Form
+  constructor: (@form) ->
+    @url = new ComponentUrl @form.action
+    @method = @form.method.toUpperCase()
+
+  data: ->
+    data = []
+
+    for element in @form.elements when element.name and !element.disabled
+      tagName = element.tagName.toLowerCase()
+      continue unless serializers[tagName]
+
+      value = serializers[tagName](element)
+      continue if value is null
+
+      key = encodeURIComponent element.name
+
+      if Array.isArray(data)
+        data.push "#{key}=#{encodeURIComponent val}" for val in value
+      else
+        data.push "#{key}=#{encodeURIComponent value}"
+
+    data.join('&').replace(r20, '+')
+
+  shouldIgnore: ->
+    @_crossOrigin() or
+      @_optOut() or
+      @_target() or
+      @_file()
+
+  _crossOrigin: ->
+    @url.origin isnt (new ComponentUrl).origin
+
+  _optOut: ->
+    form = @form
+    until ignore or form is document
+      ignore = form.getAttribute('data-no-turbolink')?
+      form = form.parentNode
+    ignore
+
+  _target: ->
+    @form.target.length isnt 0
+
+  _file: ->
+    return true for element in @form.elements when element.type.toLowerCase() is 'file'
+    null
+
+class Submit
+  @installHandlerLast: (event) ->
+    unless event.defaultPrevented
+      document.removeEventListener 'submit', Submit.handle, false
+      document.addEventListener 'submit', Submit.handle, false
+
+  @handle: (event) ->
+    new Submit event
+
+  constructor: (@event) ->
+    return if @event.defaultPrevented
+    @form = new Form @event.target
+    unless @form.shouldIgnore()
+      send @form.url, @form.method, @form.data()
+      @event.preventDefault()
+
+serializers =
+  input: (element) ->
+    if element.type.toLowerCase() in ['checkbox', 'radio']
+      if element.checked then element.value else null
+    else
+      element.value
+  textarea: (element) -> element.value
+  button: (element) -> element.value
+  select: ->
+    if element.type.toLowerCase() is 'select-one'
+      index = element.selectedIndex 
+      if index >= 0 then element.options[element.selectedIndex].value else null
+    else
+      option.value for option in element.options when option.selected
 
 # Delay execution of function long enough to miss the popstate event
 # some browsers fire on the initial page load.
@@ -377,6 +476,7 @@ initializeTurbolinks = ->
   createDocument = browserCompatibleDocumentParser()
 
   document.addEventListener 'click', Click.installHandlerLast, true
+  document.addEventListener 'submit', Submit.installHandlerLast, true
 
   bypassOnLoadPopstate ->
     window.addEventListener 'popstate', installHistoryChangeHandler, false
@@ -405,15 +505,46 @@ if browserSupportsCustomEvents
 
 if browserSupportsTurbolinks
   visit = fetch
+  submit = send
   initializeTurbolinks()
 else
   visit = (url) -> document.location.href = url
+  submit = (url, method, data) ->
+    form = document.createElement 'form'
+    form.setAttribute 'style', 'display:none'
+    form.setAttribute 'action', url
+
+    method = method.toUpperCase()
+    if method is 'POST'
+      form.setAttribute 'method', method
+    else
+      form.setAttribute 'method', 'POST'
+      data['_method'] = method
+
+    for element in document.getElementsByTagName('meta')
+      switch element.getAttribute 'name'
+        when 'csrf-param'
+          param = element.getAttribute 'content'
+        when 'csrf-token'
+          token = element.getAttribute 'content'
+    data[param] = token if param and token
+
+    for own key, value of data
+      input = document.createElement 'input'
+      input.setAttribute 'type', 'hidden'
+      input.setAttribute 'name', key
+      input.setAttribute 'value', value
+      form.appendChild input
+
+    document.body.appendChild form
+    form.submit()
 
 # Public API
 #   Turbolinks.visit(url)
+#   Turbolinks.submit(url, method, data)
 #   Turbolinks.pagesCached()
 #   Turbolinks.pagesCached(20)
 #   Turbolinks.enableTransitionCache()
 #   Turbolinks.allowLinkExtensions('md')
 #   Turbolinks.supported
-@Turbolinks = { visit, pagesCached, enableTransitionCache, allowLinkExtensions: Link.allowExtensions, supported: browserSupportsTurbolinks }
+@Turbolinks = { visit, submit, pagesCached, enableTransitionCache, allowLinkExtensions: Link.allowExtensions, supported: browserSupportsTurbolinks }
