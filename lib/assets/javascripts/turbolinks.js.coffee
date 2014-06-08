@@ -44,7 +44,7 @@ fetchReplacement = (url, onLoadFunction = =>) ->
     triggerEvent 'page:receive'
 
     if doc = processResponse()
-      changePage extractTitleAndBody(doc)...
+      changePage processDocument(doc)
       manuallyTriggerHashChangeForFirefox()
       reflectRedirectedUrl()
       onLoadFunction()
@@ -59,7 +59,7 @@ fetchReplacement = (url, onLoadFunction = =>) ->
 
 fetchHistory = (cachedPage) ->
   xhr?.abort()
-  changePage cachedPage.title, cachedPage.body
+  changePage title: cachedPage.title, body: cachedPage.body
   recallScrollPosition cachedPage
   triggerEvent 'page:restore'
 
@@ -92,13 +92,17 @@ constrainPageCacheTo = (limit) ->
     triggerEvent 'page:expire', pageCache[key]
     delete pageCache[key]
 
-changePage = (title, body, csrfToken, runScripts) ->
-  document.title = title
-  document.documentElement.replaceChild body, document.body
-  CSRFToken.update csrfToken if csrfToken?
+changePage = (page) ->
+  document.title = page.title
+  document.documentElement.replaceChild page.body, document.body
+
+  CSRFToken.set page.csrfToken
+  HTMLAttributes.set page.htmlAttributes
+
   setAutofocusElement()
-  executeScriptTags() if runScripts
+  executeScriptTags() if page.runScripts
   currentState = window.history.state
+
   triggerEvent 'page:change'
   triggerEvent 'page:update'
 
@@ -203,19 +207,44 @@ processResponse = ->
     if doc and !assetsChanged doc
       return doc
 
-extractTitleAndBody = (doc) ->
-  title = doc.querySelector 'title'
-  [ title?.textContent, removeNoscriptTags(doc.body), CSRFToken.get(doc).token, 'runScripts' ]
+processDocument = (doc) ->
+  title: doc.querySelector('title')?.textContent
+  body: removeNoscriptTags(doc.body)
+  csrfToken: CSRFToken.get(doc).token
+  htmlAttributes: HTMLAttributes.get(doc)
+  runScripts: true
 
 CSRFToken =
   get: (doc = document) ->
     node:   tag = doc.querySelector 'meta[name="csrf-token"]'
     token:  tag?.getAttribute? 'content'
 
-  update: (latest) ->
+  set: (latest) ->
+    return unless latest?
     current = @get()
-    if current.token? and latest? and current.token isnt latest
+    if current.token? and current.token isnt latest
       current.node.setAttribute 'content', latest
+
+HTMLAttributes =
+  get: (doc = document) ->
+    doc.documentElement.attributes
+
+  set: (attributes, doc = document) ->
+    return unless attributes?
+
+    element = doc.documentElement
+
+    forbidden = (attribute.name for attribute in element.attributes)
+
+    for attribute in attributes
+      element.setAttribute attribute.name, attribute.value
+
+      index = forbidden.indexOf attribute.name
+      forbidden.splice(index, 1) if index > -1
+
+    element.removeAttribute name for name in forbidden
+
+    return
 
 browserCompatibleDocumentParser = ->
   createDocumentUsingParser = (html) ->
