@@ -394,6 +394,7 @@ initializeTurbolinks = ->
   window.addEventListener 'hashchange', (event) ->
     rememberCurrentUrl()
     rememberCurrentState()
+    cacheCurrentPage()
   , false
   bypassOnLoadPopstate ->
     window.addEventListener 'popstate', installHistoryChangeHandler, false
