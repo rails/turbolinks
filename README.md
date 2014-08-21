@@ -33,7 +33,8 @@ With Turbolinks pages will change without a full reload, so you can't rely on `D
 * `page:before-change` a Turbolinks-enabled link has been clicked *(see below for more details)*
 * `page:fetch` starting to fetch a new target page
 * `page:receive` the page has been fetched from the server, but not yet parsed
-* `page:change` the page has been parsed and changed to the new version and on DOMContentLoaded
+* `page:processed` the page has been parsed, but not yet changed
+* `page:change` the page has been changed to the new version and on DOMContentLoaded
 * `page:update` is triggered whenever page:change is PLUS on jQuery's ajaxSucess, if jQuery is available (otherwise you can manually trigger it when calling XMLHttpRequest in your own code)
 * `page:load` is fired at the end of the loading process.
 
@@ -57,13 +58,13 @@ Turbolinks.pagesCached(20);
 
 When a page is removed from the cache due to the cache reaching its size limit, the `page:expire` event is triggered.  Listeners bound to this event can access the cached page object using `event.originalEvent.data`.  Keys of note for this page cache object include `url`, `body`, and `title`.  
 
-To implement a client-side spinner, you could listen for `page:fetch` to start it and `page:receive` to stop it.
+To implement a client-side spinner, you could listen for `page:fetch` to start it and `page:processed` to stop it.
 
 ```javascript
 // using jQuery for simplicity
     
 $(document).on("page:fetch", startSpinner);
-$(document).on("page:receive", stopSpinner);
+$(document).on("page:processed", stopSpinner);
 ```
 
 DOM transformations that are idempotent are best. If you have transformations that are not, hook them to happen only on `page:load` instead of `page:change` (as that would run them again on the cached pages).

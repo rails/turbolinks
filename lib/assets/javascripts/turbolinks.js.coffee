@@ -44,6 +44,7 @@ fetchReplacement = (url, onLoadFunction = =>) ->
     triggerEvent 'page:receive'
 
     if doc = processResponse()
+      triggerEvent 'page:processed'
       changePage extractTitleAndBody(doc)...
       manuallyTriggerHashChangeForFirefox()
       reflectRedirectedUrl()
