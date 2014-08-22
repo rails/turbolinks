@@ -11,7 +11,7 @@ createDocument          = null
 xhr                     = null
 
 
-fetch = (url) ->
+fetch = (url, keepScroll = false) ->
   url = new ComponentUrl url
 
   rememberReferer()
@@ -19,6 +19,8 @@ fetch = (url) ->
 
   if transitionCacheEnabled and cachedPage = transitionCacheFor(url.absolute)
     fetchHistory cachedPage
+    fetchReplacement url
+  else if keepScroll
     fetchReplacement url
   else
     fetchReplacement url, resetScrollPosition
@@ -340,7 +342,8 @@ class Click
     return if @event.defaultPrevented
     @_extractLink()
     if @_validForTurbolinks()
-      visit @link.href unless pageChangePrevented()
+      keepScroll = @link.link.getAttribute && @link.link.getAttribute('data-keep-scroll')?
+      visit @link.href, keepScroll unless pageChangePrevented()
       @event.preventDefault() 
 
   _extractLink: ->
@@ -427,7 +430,7 @@ else
   visit = (url) -> document.location.href = url
 
 # Public API
-#   Turbolinks.visit(url)
+#   Turbolinks.visit(url, keepScroll=false)
 #   Turbolinks.pagesCached()
 #   Turbolinks.pagesCached(20)
 #   Turbolinks.enableTransitionCache()
