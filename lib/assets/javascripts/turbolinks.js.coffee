@@ -93,6 +93,7 @@ constrainPageCacheTo = (limit) ->
     delete pageCache[key]
 
 changePage = (title, body, csrfToken, runScripts) ->
+  body = document.importNode?(body, true);
   document.title = title
   document.documentElement.replaceChild body, document.body
   CSRFToken.update csrfToken if csrfToken?
