@@ -48,7 +48,7 @@ fetchReplacement = (url, onLoadFunction = =>) ->
       manuallyTriggerHashChangeForFirefox()
       reflectRedirectedUrl()
       onLoadFunction()
-      triggerEvent 'page:load'
+      triggerEvent 'page:load', xhr
     else
       document.location.href = url.absolute
 
