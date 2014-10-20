@@ -33,8 +33,9 @@ With Turbolinks pages will change without a full reload, so you can't rely on `D
 * `page:before-change` a Turbolinks-enabled link has been clicked *(see below for more details)*
 * `page:fetch` starting to fetch a new target page
 * `page:receive` the page has been fetched from the server, but not yet parsed
-* `page:change` the page has been parsed and changed to the new version and on DOMContentLoaded
-* `page:update` is triggered whenever page:change is PLUS on jQuery's ajaxSucess, if jQuery is available (otherwise you can manually trigger it when calling XMLHttpRequest in your own code)
+* `page:before-unload` the page has been parsed and is about to be changed
+* `page:change` the page has been changed to the new version (and on DOMContentLoaded)
+* `page:update` is triggered alongside both page:change and jQuery's ajaxSuccess (if jQuery is available - otherwise you can manually trigger it when calling XMLHttpRequest in your own code)
 * `page:load` is fired at the end of the loading process.
 
 Handlers bound to the `page:before-change` event may return `false`, which will cancel the Turbolinks process.
@@ -42,6 +43,7 @@ Handlers bound to the `page:before-change` event may return `false`, which will 
 By default, Turbolinks caches 10 of these page loads. It listens to the [popstate](https://developer.mozilla.org/en-US/docs/DOM/Manipulating_the_browser_history#The_popstate_event) event and attempts to restore page state from the cache when it's triggered. When `popstate` is fired the following process happens:
 
 ***Restore* a cached page from the client-side cache:**
+* `page:before-unload` page has been fetched from the cache and is about to be changed
 * `page:change` page has changed to the cached page.
 * `page:restore` is fired at the end of restore process.
 
@@ -59,15 +61,19 @@ When a page is removed from the cache due to the cache reaching its size limit, 
 
 To implement a client-side spinner, you could listen for `page:fetch` to start it and `page:receive` to stop it.
 
-    document.addEventListener("page:fetch", startSpinner);
-    document.addEventListener("page:receive", stopSpinner);
+```javascript
+// using jQuery for simplicity
+    
+$(document).on("page:fetch", startSpinner);
+$(document).on("page:receive", stopSpinner);
+```
 
 DOM transformations that are idempotent are best. If you have transformations that are not, hook them to happen only on `page:load` instead of `page:change` (as that would run them again on the cached pages).
 
 Transition Cache: A Speed Boost
--------------------------------------
+-------------------------------
 
-Transition Cache is an experimental feature that makes loading cached pages instanteneous. Once a user has visited a page, returning later to the page results in an instant load.
+Transition Cache, added in v2.2.0, makes loading cached pages instantaneous. Once a user has visited a page, returning later to the page results in an instant load.
 
 For example, if Page A is already cached by Turbolinks and you are on Page B, clicking a link to Page A will *immediately* display the cached copy of Page A. Turbolinks will then fetch Page A from the server and replace the cached page once the new copy is returned.
 
@@ -186,7 +192,7 @@ Installation
 
 1. Add `gem 'turbolinks'` to your Gemfile.
 1. Run `bundle install`.
-1. Add `//= require turbolinks` to your Javascript manifest file (usually found at `app/assets/javascripts/application.js`).
+1. Add `//= require turbolinks` to your Javascript manifest file (usually found at `app/assets/javascripts/application.js`). If your manifest requires both turbolinks and jQuery, make sure turbolinks is listed *after* jQuery.
 1. Restart your server and you're now using turbolinks!
 
 Language Ports
@@ -195,7 +201,10 @@ Language Ports
 *These projects are not affiliated with or endorsed by the Rails Turbolinks team.*
 
 * [Flask Turbolinks](https://github.com/lepture/flask-turbolinks) (Python Flask)
+* [Django Turbolinks](https://github.com/dgladkov/django-turbolinks) (Python Django)
 * [ASP.NET MVC Turbolinks](https://github.com/kazimanzurrashid/aspnetmvcturbolinks)
+* [PHP Turbolinks Component](https://github.com/helthe/Turbolinks) (Symfony Component)
+* [PHP Turbolinks Package](https://github.com/frenzyapp/turbolinks) (Laravel Package)
 
 Credits
 -------
