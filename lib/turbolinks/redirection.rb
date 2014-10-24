@@ -11,6 +11,8 @@ module Turbolinks
         self.status = 200
         self.response_body = "Turbolinks.visit('#{location}');"
         response.content_type = Mime::JS
+      else
+        self.status = 302
       end
 
     end
