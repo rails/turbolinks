@@ -102,6 +102,7 @@ The progress bar is implemented on the `<html>` element's pseudo `:before` eleme
 html.turbolinks-progress-bar::before {
   background-color: red !important;
   height: 5px !important;
+  z-index: 10000; /* Show progress bar above fixed navbar */
 }
 ```
 
