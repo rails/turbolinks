@@ -43,7 +43,7 @@ enableTransitionCache = (enable = true) ->
   transitionCacheEnabled = enable
 
 enableProgressBar = (enable = true) ->
-  if enable
+  if enable and browserSupportsProgressBar
     progressBar ?= new ProgressBar 'html'
   else
     progressBar?.uninstall()
@@ -509,7 +509,7 @@ class ProgressBar
 
   _createCSSRule: ->
     """
-    #{@elementSelector}.#{className}::before {
+    #{@elementSelector}.#{className} body::before {
       content: '#{@content}';
       position: fixed;
       top: 0;
@@ -570,6 +570,9 @@ historyStateIsDefined =
 
 browserSupportsPushState =
   window.history and window.history.pushState and window.history.replaceState and historyStateIsDefined
+
+browserSupportsProgressBar =
+  document?.createElement('_').classList?
 
 browserIsntBuggy =
   !navigator.userAgent.match /CriOS\//
