@@ -125,23 +125,34 @@ changePage = (title, body, csrfToken, runScripts) ->
   document.documentElement.replaceChild body, document.body
   CSRFToken.update csrfToken if csrfToken?
   setAutofocusElement()
-  executeScriptTags() if runScripts
+  if runScripts
+    tags = Array::slice.call document.body.querySelectorAll 'script:not([data-turbolinks-eval="false"])'
+    scripts = (tag for tag in tags when tag.type in ['', 'text/javascript'])
+    executeScriptTags scripts, changePageFinished
+  else
+    changePageFinished()
+
+changePageFinished = ->
   currentState = window.history.state
   progressBar?.done()
   triggerEvent EVENTS.CHANGE
   triggerEvent EVENTS.UPDATE
 
-executeScriptTags = ->
-  scripts = Array::slice.call document.body.querySelectorAll 'script:not([data-turbolinks-eval="false"])'
-  for script in scripts when script.type in ['', 'text/javascript']
-    copy = document.createElement 'script'
-    copy.setAttribute attr.name, attr.value for attr in script.attributes
-    copy.async = false unless script.hasAttribute 'async'
-    copy.appendChild document.createTextNode script.innerHTML
-    { parentNode, nextSibling } = script
-    parentNode.removeChild script
-    parentNode.insertBefore copy, nextSibling
-  return
+executeScriptTags = (scripts, cb) ->
+  if scripts.length == 0
+    return cb()
+  script = scripts.shift()
+  copy = document.createElement 'script'
+  copy.setAttribute attr.name, attr.value for attr in script.attributes
+  copy.async = false unless script.hasAttribute 'async'
+  copy.appendChild document.createTextNode script.innerHTML
+  if copy.getAttribute('src')
+    copy.onload = -> executeScriptTags(scripts, cb)
+  { parentNode, nextSibling } = script
+  parentNode.removeChild script
+  parentNode.insertBefore copy, nextSibling
+  unless copy.getAttribute('src')
+    executeScriptTags(scripts, cb)
 
 removeNoscriptTags = (node) ->
   node.innerHTML = node.innerHTML.replace /<noscript[\S\s]*?<\/noscript>/ig, ''
