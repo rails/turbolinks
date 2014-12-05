@@ -453,7 +453,7 @@ class ProgressBar
 
   _createCSSRule: ->
     """
-    #{@elementSelector}.#{className} body::before {
+    #{@elementSelector}.#{className}#{if @elementSelector is 'html' then ' body' else ''}::before {
       content: '#{@content}';
       position: fixed;
       top: 0;
