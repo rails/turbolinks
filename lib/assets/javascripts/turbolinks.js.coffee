@@ -153,6 +153,7 @@ setAutofocusElement = ->
   autofocusElement = (list = document.querySelectorAll 'input[autofocus], textarea[autofocus]')[list.length - 1]
   if autofocusElement and document.activeElement isnt autofocusElement
     autofocusElement.focus()
+    autofocusElement.setSelectionRange 0, autofocusElement.value.length
 
 reflectNewUrl = (url) ->
   if (url = new ComponentUrl url).absolute isnt referer
