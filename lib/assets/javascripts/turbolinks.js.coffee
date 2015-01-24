@@ -500,10 +500,10 @@ installHistoryChangeHandler = (event) ->
     if cachedPage = pageCache[(new ComponentUrl(event.state.url)).absolute]
       cacheCurrentPage()
       fetchHistory cachedPage
-    else if !meta || meta.lastPopstate != "fancybox"
+    else if !meta || meta.lastPopstate != "modal"
       visit event.target.location.href
     else
-      meta.lastPushState = ""
+      meta.lastPopstate = ""
 
 initializeTurbolinks = ->
   rememberCurrentUrl()
