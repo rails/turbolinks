@@ -514,8 +514,10 @@ installHistoryChangeHandler = (event) ->
     if cachedPage = pageCache[(new ComponentUrl(event.state.url)).absolute]
       cacheCurrentPage()
       fetchHistory cachedPage
-    else
+    else if !meta || meta.lastPopstate != "modal"
       visit event.target.location.href
+    else
+      meta.lastPopstate = ""
 
 initializeTurbolinks = ->
   rememberCurrentUrl()
@@ -523,12 +525,11 @@ initializeTurbolinks = ->
 
   document.addEventListener 'click', Click.installHandlerLast, true
 
-  window.addEventListener 'hashchange', (event) ->
+  $(window).on 'hashchange', (event) ->
     rememberCurrentUrl()
     rememberCurrentState()
-  , false
   bypassOnLoadPopstate ->
-    window.addEventListener 'popstate', installHistoryChangeHandler, false
+    $(window).on 'popstate', installHistoryChangeHandler, false
 
 # Handle bug in Firefox 26/27 where history.state is initially undefined
 historyStateIsDefined =
