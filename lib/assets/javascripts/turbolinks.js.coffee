@@ -604,7 +604,8 @@ else
   visit = (url) -> document.location.href = url
 
 # Public API
-#   Turbolinks.visit(url)
+#   Turbolinks.visit(url, options)
+#   Turbolinks.replace(doc, options)
 #   Turbolinks.pagesCached()
 #   Turbolinks.pagesCached(20)
 #   Turbolinks.enableTransitionCache()
