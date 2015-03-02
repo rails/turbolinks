@@ -68,7 +68,7 @@ fetchReplacement = (url, options) ->
     if doc = processResponse()
       reflectNewUrl url unless options.change? || options.keep? || options.flush?
       reflectRedirectedUrl()
-      changePage doc, options
+      replace doc, options
       if options.showProgressBar
         progressBar?.done()
       manuallyTriggerHashChangeForFirefox()
@@ -93,7 +93,7 @@ fetchReplacement = (url, options) ->
 
 fetchHistory = (cachedPage) ->
   xhr?.abort()
-  changePage createDocument(cachedPage.body.outerHTML), title: cachedPage.title
+  replace cachedPage.body.outerHTML, title: cachedPage.title
   progressBar?.done()
   recallScrollPosition cachedPage
   triggerEvent EVENTS.RESTORE
@@ -126,10 +126,10 @@ constrainPageCacheTo = (limit) ->
     triggerEvent EVENTS.EXPIRE, pageCache[key]
     delete pageCache[key]
 
-replace = (html, options = {}) ->
-  changePage createDocument(html), options
+replace = (doc, options = {}) ->
+  if typeof doc is 'string'
+    doc = createDocument(doc)
 
-changePage = (doc, options) ->
   [title, targetBody, csrfToken, runScripts] = extractTitleAndBody(doc)
   title ?= options.title
 
