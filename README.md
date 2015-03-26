@@ -105,11 +105,10 @@ Because Turbolinks skips the traditional full page reload, browsers won't displa
 
 As of Turbolinks 3.0, the progress bar is turned on by default.
 
-To disable (or re-enable) the progress bar, include one of the following in your JavaScript:
+To enable the progress bar, include following line in your JavaScript:
 
 ```javascript
-Turbolinks.ProgressBar.disable();
-Turbolinks.ProgressBar.enable();
+Turbolinks.enableProgressBar();
 ```
 
 The progress bar is implemented on the `<html>` element's pseudo `:before` element and can be **customized** by including CSS with higher specificity than the included styles. For example:
