@@ -186,9 +186,12 @@ onNodeRemoved = (node) ->
 
 executeScriptTags = ->
   scripts = document.body.querySelectorAll 'script:not([data-turbolinks-eval="false"])'
-  for script in scripts when script.type in ['', 'text/javascript']
+  for script in scripts when script.type in ['', 'text/javascript', 'text/rocketscript']
     copy = document.createElement 'script'
-    copy.setAttribute attr.name, attr.value for attr in script.attributes
+    copy.setAttribute attr.name, attr.value for attr in script.attributes when attr not in ['data-rocketsrc']
+    if script.type == 'text/rocketscript'
+      copy.setAttribute 'src', script.attributes['data-rocketsrc'].value if script.attributes['data-rocketsrc']
+      copy.setAttribute 'type', 'text/javascript'
     copy.async = false unless script.hasAttribute 'async'
     copy.appendChild document.createTextNode script.innerHTML
     { parentNode, nextSibling } = script
