@@ -277,19 +277,19 @@ Any node with an `id` attribute can be partially replaced. If the `id` contains 
 
 <script>
 // Will change #flash, #comments, #comments:123
-Turbolinks.visit(url, change: 'comments')
+Turbolinks.visit(url, { change: 'comments' })
 
 // Will change #flash, #comments:123
-Turbolinks.visit(url, change: 'comments:123')
+Turbolinks.visit(url, { change: 'comments:123' })
 
 // Will only keep #sidebar
 Turbolinks.visit(url)
 
 // Will only keep #sidebar, #flash
-Turbolinks.visit(url, keep: 'flash')
+Turbolinks.visit(url, { keep: 'flash' })
 
 // Will keep nothing
-Turbolinks.visit(url, flush: true)
+Turbolinks.visit(url, { flush: true })
 
 // Same as visit() but takes a string or Document, allowing you to
 // do inline responses instead of issuing a new GET with Turbolinks.visit.
