@@ -228,6 +228,22 @@ You can use `Turbolinks.visit(path)` to go to a URL through Turbolinks.
 
 You can also use `redirect_to path, turbolinks: true` in Rails to perform a redirect via Turbolinks.
 
+Scroll position (3.0+)
+----------------------
+
+By default, `Turbolinks.visit(path)` will reset the scroll position to `(0, 0)`.
+
+You can prevent that by invoking it like `Turbolinks.visit(path, { keepScrollPosition: true })`, or by marking your link or any parent container with the `data-turbolinks-keep-scroll` attribute.
+
+```html
+<a href="/path" data-turbolinks-keep-scroll>Refresh the page and keep the scroll position.</a>
+
+<script type="text/javascript">
+  // Call it manually
+  Turbolinks.visit('/path', { keepScrollPosition: true });
+</script>
+```
+
 Partial replacements with Turbolinks (3.0+)
 -------------------------------------------
 

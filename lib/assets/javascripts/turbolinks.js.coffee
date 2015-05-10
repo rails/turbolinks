@@ -34,7 +34,7 @@ fetch = (url, options = {}) ->
     options.showProgressBar = false
     fetchReplacement url, options
   else
-    options.onLoadFunction = resetScrollPosition
+    options.onLoadFunction = resetScrollPosition unless options.keepScrollPosition
     fetchReplacement url, options
 
 transitionCacheFor = (url) ->
@@ -385,6 +385,13 @@ class Link extends ComponentUrl
     @link = @link.cloneNode false
     super
 
+  keepScrollPosition: ->
+    link = @originalElement
+    until keepScroll or link is document
+      keepScroll = link.getAttribute('data-turbolinks-keep-scroll')?
+      link = link.parentNode
+    keepScroll
+
   shouldIgnore: ->
     @crossOrigin() or
       @_anchored() or
@@ -427,7 +434,7 @@ class Click
     return if @event.defaultPrevented
     @_extractLink()
     if @_validForTurbolinks()
-      visit @link.href unless pageChangePrevented(@link.absolute)
+      visit(@link.href, keepScrollPosition: @link.keepScrollPosition()) unless pageChangePrevented(@link.absolute)
       @event.preventDefault()
 
   _extractLink: ->
@@ -634,7 +641,7 @@ else
   visit = (url) -> document.location.href = url
 
 # Public API
-#   Turbolinks.visit(url)
+#   Turbolinks.visit(url, options)
 #   Turbolinks.replace(html)
 #   Turbolinks.pagesCached()
 #   Turbolinks.pagesCached(20)
