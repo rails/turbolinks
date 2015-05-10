@@ -602,6 +602,7 @@ initializeTurbolinks = ->
   window.addEventListener 'hashchange', (event) ->
     rememberCurrentUrl()
     rememberCurrentState()
+    cacheCurrentPage()
   , false
 
   window.addEventListener 'popstate', onHistoryChange, false
