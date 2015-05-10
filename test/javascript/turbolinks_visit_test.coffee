@@ -162,6 +162,7 @@ suite 'Turbolinks.visit()', ->
         assert.equal @window.i, 2
         assert.equal @document.title, 'title'
         assert.equal @$('#permanent'), permanent
+        assert.ok @$('#ignored-from-cache')
         @$('#permanent').click() # event listeners on permanent nodes should not be lost
     @document.addEventListener 'page:restore', =>
       assert.equal load, 1
@@ -169,6 +170,7 @@ suite 'Turbolinks.visit()', ->
       assert.notOk @$('body').hasAttribute('new-attribute')
       assert.equal @document.title, 'title'
       assert.equal @$('#permanent'), permanent
+      assert.notOk @$('#ignored-from-cache')
       restoreCalled = true
     @Turbolinks.enableTransitionCache()
     @Turbolinks.visit('iframe2.html')

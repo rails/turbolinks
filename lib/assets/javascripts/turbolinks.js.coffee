@@ -92,7 +92,9 @@ fetchReplacement = (url, options) ->
 
 fetchHistory = (cachedPage, options = {}) ->
   xhr?.abort()
-  changePage createDocument(cachedPage.body), title: cachedPage.title, runScripts: false
+  newDocument = createDocument(cachedPage.body)
+  node.parentNode.removeChild(node) for node in findNodes(newDocument, '[data-turbolinks-cache="false"]')
+  changePage newDocument, title: cachedPage.title, runScripts: false
   progressBar?.done()
   updateScrollPosition(options.scroll)
   triggerEvent EVENTS.RESTORE

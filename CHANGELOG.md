@@ -142,6 +142,9 @@
 
     *Thibaut Courouble*
 
+*   Add ability to remove only certain elements from a cached page, before restoring it, by specifying `data-turbolinks-cache="false"` on those elements.
+
+    *Christophe Maximin*
 
 ## Turbolinks 2.5.3 (December 8, 2014)
 
