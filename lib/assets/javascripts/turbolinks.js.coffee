@@ -7,8 +7,6 @@ progressBar             = null
 currentState            = null
 loadedAssets            = null
 
-referer                 = null
-
 xhr                     = null
 
 EVENTS =
@@ -25,11 +23,11 @@ EVENTS =
 fetch = (url, options = {}) ->
   url = new ComponentUrl url
 
-  rememberReferer()
   cacheCurrentPage()
   progressBar?.start()
 
   if transitionCacheEnabled and cachedPage = transitionCacheFor(url.absolute)
+    reflectNewUrl url
     fetchHistory cachedPage
     options.showProgressBar = false
     fetchReplacement url, options
@@ -58,13 +56,13 @@ fetchReplacement = (url, options) ->
   xhr = new XMLHttpRequest
   xhr.open 'GET', url.formatForXHR(cache: options.cacheRequest), true
   xhr.setRequestHeader 'Accept', 'text/html, application/xhtml+xml, application/xml'
-  xhr.setRequestHeader 'X-XHR-Referer', referer
+  xhr.setRequestHeader 'X-XHR-Referer', document.location.href
 
   xhr.onload = ->
     triggerEvent EVENTS.RECEIVE, url: url.absolute
 
     if doc = processResponse()
-      reflectNewUrl url
+      reflectNewUrl url 
       reflectRedirectedUrl()
       changePage doc, options
       if options.showProgressBar
@@ -206,7 +204,7 @@ setAutofocusElement = ->
     autofocusElement.focus()
 
 reflectNewUrl = (url) ->
-  if (url = new ComponentUrl url).absolute isnt referer
+  if (url = new ComponentUrl url).absolute isnt document.location.href
     window.history.pushState { turbolinks: true, url: url.absolute }, '', url.absolute
 
 reflectRedirectedUrl = ->
@@ -217,9 +215,6 @@ reflectRedirectedUrl = ->
 
 crossOriginRedirect = ->
   redirect if (redirect = xhr.getResponseHeader('Location'))? and (new ComponentUrl(redirect)).crossOrigin()
-
-rememberReferer = ->
-  referer = document.location.href
 
 rememberCurrentUrl = ->
   window.history.replaceState { turbolinks: true, url: document.location.href }, '', document.location.href
