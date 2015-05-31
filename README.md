@@ -83,6 +83,8 @@ DOM transformations that are idempotent are best. If you have transformations th
 $(document).on("ready page:load", nonIdempotentFunction);
 ```
 
+To remove some elements from the DOM before displaying a page again from the cache, like a flash notice, you can give them the attribute `data-turbolinks-cache="false"`
+
 Transition Cache: A Speed Boost
 -------------------------------
 
