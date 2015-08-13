@@ -24,7 +24,7 @@ EVENTS =
   AFTER_REMOVE:   'page:after-remove'
 
 fetch = (url, options = {}) ->
-  nodesToChange = nodesToChange(currentBody, options)
+  nodesToChange = nodesToChange(options)
   unless pageChangePrevented(url, nodesToChange)
 
     url = new ComponentUrl url
@@ -137,12 +137,13 @@ constrainPageCacheTo = (limit) ->
     delete pageCache[key]
 
 replace = (html, options = {}) ->
-  nodesToChange = nodesToChange(currentBody, options)
+  nodesToChange = nodesToChange(options)
   unless pageChangePrevented(url, nodesToChange)
     loadedNodes = changePage extractTitleAndBody(createDocument(html))..., options
     triggerEvent (if options.change then EVENTS.PARTIAL_LOAD else EVENTS.LOAD), loadedNodes
 
-nodesToChange = (currentBody, options) ->
+nodesToChange = (options) ->
+  currentBody = document.body
   if options.change
     nodesToChange = findNodes(currentBody, '[data-turbolinks-temporary]')
     nodesToChange.push(findNodesMatchingKeys(currentBody, options.change)...)
@@ -153,7 +154,7 @@ nodesToChange = (currentBody, options) ->
 changePage = (title, body, csrfToken, options) ->
   title = options.title ? title
   currentBody = document.body
-  nodesToChange = nodesToChange(currentBody, options)
+  nodesToChange = nodesToChange(options)
 
   triggerEvent EVENTS.BEFORE_UNLOAD, nodesToChange
   document.title = title if title isnt false
