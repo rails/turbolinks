@@ -24,24 +24,28 @@ EVENTS =
   AFTER_REMOVE:   'page:after-remove'
 
 fetch = (url, options = {}) ->
-  url = new ComponentUrl url
+  nodesToChange = nodesToChangeFromOptions(options)
+  unless pageChangePrevented({url: url, nodesToChange: nodesToChange})
 
-  if options.change or options.keep
-    removeCurrentPageFromCache()
-  else
-    cacheCurrentPage()
-
-  rememberReferer()
-  progressBar?.start()
-
-  if transitionCacheEnabled and !options.change and cachedPage = transitionCacheFor(url.absolute)
-    fetchHistory cachedPage
-    options.showProgressBar = false
-    options.scroll = false
-  else
-    options.scroll ?= false if options.change
-
-  fetchReplacement url, options
+    url = new ComponentUrl url
+  
+    if options.change or options.keep
+      removeCurrentPageFromCache()
+    else
+      cacheCurrentPage()
+  
+    rememberReferer()
+    progressBar?.start()
+  
+    if transitionCacheEnabled and !options.change and cachedPage = transitionCacheFor(url.absolute)
+      fetchHistory cachedPage
+      options.showProgressBar = false
+      options.scroll = false
+    else
+      options.scroll ?= false if options.change
+  
+    fetchReplacement url, options
+  
 
 transitionCacheFor = (url) ->
   cachedPage = pageCache[url]
@@ -133,18 +137,24 @@ constrainPageCacheTo = (limit) ->
     delete pageCache[key]
 
 replace = (html, options = {}) ->
-  loadedNodes = changePage extractTitleAndBody(createDocument(html))..., options
-  triggerEvent (if options.change then EVENTS.PARTIAL_LOAD else EVENTS.LOAD), loadedNodes
+  nodesToChange = nodesToChangeFromOptions(options)
+  unless pageChangePrevented({html: html, nodesToChange: nodesToChange})
+    loadedNodes = changePage extractTitleAndBody(createDocument(html))..., options
+    triggerEvent (if options.change then EVENTS.PARTIAL_LOAD else EVENTS.LOAD), loadedNodes
 
-changePage = (title, body, csrfToken, options) ->
-  title = options.title ? title
+nodesToChangeFromOptions = (options) ->
   currentBody = document.body
-
   if options.change
     nodesToChange = findNodes(currentBody, '[data-turbolinks-temporary]')
     nodesToChange.push(findNodesMatchingKeys(currentBody, options.change)...)
   else
     nodesToChange = [currentBody]
+  return nodesToChange
+
+changePage = (title, body, csrfToken, options) ->
+  title = options.title ? title
+  currentBody = document.body
+  nodesToChange = nodesToChangeFromOptions(options)
 
   triggerEvent EVENTS.BEFORE_UNLOAD, nodesToChange
   document.title = title if title isnt false
@@ -286,8 +296,8 @@ triggerEvent = (name, data) ->
   event.initEvent name, true, true
   document.dispatchEvent event
 
-pageChangePrevented = (url) ->
-  !triggerEvent EVENTS.BEFORE_CHANGE, url: url
+pageChangePrevented = (data) ->
+  !triggerEvent EVENTS.BEFORE_CHANGE, data
 
 processResponse = ->
   clientOrServerError = ->
@@ -442,7 +452,7 @@ class Click
     return if @event.defaultPrevented
     @_extractLink()
     if @_validForTurbolinks()
-      visit @link.href unless pageChangePrevented(@link.absolute)
+      visit @link.href
       @event.preventDefault()
 
   _extractLink: ->
