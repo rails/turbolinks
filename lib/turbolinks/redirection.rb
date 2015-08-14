@@ -49,20 +49,19 @@ module Turbolinks
       end
 
       def _turbolinks_js_options(options)
-        if options.length > 0
-          js_options = ", { "
-          if options[:change]
-            js_options.concat("change: ['#{Array(options[:change]).join("', '")}']")
-          elsif options[:keep]
-            js_options.concat("keep: ['#{Array(options[:keep]).join("', '")}']")
-          elsif options[:flush]
-            js_options.concat("flush: true")
-          end
-          if options[:scroll].present?
-            js_options.concat(", scroll: #{options[:scroll]}")
-          end
-          js_options += " }"
+        js_options = []
+        if options[:change]
+          js_options.push("change: ['#{Array(options[:change]).join("', '")}']")
+        elsif options[:keep]
+          js_options.push("keep: ['#{Array(options[:keep]).join("', '")}']")
+        elsif options[:flush]
+          js_options.push("flush: true")
         end
+        if options[:scroll].present?
+          js_options.push("scroll: #{options[:scroll]}")
+        end
+
+        js_options.length > 0 ? ", {" + js_options.join(", ")  + "}" : ""
       end
   end
 end
