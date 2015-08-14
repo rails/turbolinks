@@ -36,9 +36,10 @@ module Turbolinks
     private
       def _extract_turbolinks_options!(options)
         turbolinks = options.delete(:turbolinks)
-        options = options.extract!(:keep, :change, :flush).delete_if { |_, value| value.nil? }
-        raise ArgumentError, "cannot combine :keep, :change and :flush options" if options.size > 1
-        [turbolinks, options]
+        extracted_options = options.extract!(:keep, :change, :flush).delete_if { |_, value| value.nil? }
+        raise ArgumentError, "cannot combine :keep, :change and :flush options" if extracted_options.size > 1
+        extracted_options.merge!(options.extract!(:scroll).delete_if { |_, value| value.nil? })
+        [turbolinks, extracted_options]
       end
 
       def _perform_turbolinks_response(body)
@@ -48,13 +49,18 @@ module Turbolinks
       end
 
       def _turbolinks_js_options(options)
+        js_options = ", {"
         if options[:change]
-          ", { change: ['#{Array(options[:change]).join("', '")}'] }"
+          js_options.concat("change: ['#{Array(options[:change]).join("', '")}']")
         elsif options[:keep]
-          ", { keep: ['#{Array(options[:keep]).join("', '")}'] }"
+          js_options.concat("keep: ['#{Array(options[:keep]).join("', '")}']")
         elsif options[:flush]
-          ", { flush: true }"
+          js_options.concat("flush: true")
         end
+        if options[:scroll].present?
+          js_options.concat(", scroll: #{options[:scroll]}")
+        end
+        js_options += "}"
       end
   end
 end
