@@ -50,7 +50,7 @@ module Turbolinks
 
       def _turbolinks_js_options(options)
         if options.length > 0
-          js_options = ", {"
+          js_options = ", { "
           if options[:change]
             js_options.concat("change: ['#{Array(options[:change]).join("', '")}']")
           elsif options[:keep]
@@ -61,7 +61,7 @@ module Turbolinks
           if options[:scroll].present?
             js_options.concat(", scroll: #{options[:scroll]}")
           end
-          js_options += "}"
+          js_options += " }"
         end
       end
   end
