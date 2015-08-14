@@ -61,7 +61,7 @@ module Turbolinks
           js_options.push("scroll: #{options[:scroll]}")
         end
 
-        js_options.length > 0 ? ", {" + js_options.join(", ")  + "}" : ""
+        js_options.length > 0 ? ", { " + js_options.join(", ")  + " }" : ""
       end
   end
 end
