@@ -146,7 +146,10 @@ nodesToChangeFromOptions = (options) ->
   currentBody = document.body
   if options.change
     nodesToChange = findNodes(currentBody, '[data-turbolinks-temporary]')
-    nodesToChange.push(findNodesMatchingKeys(currentBody, options.change)...)
+    nodesMatchingKeys = findNodesMatchingKeys(currentBody, options.change)
+    for i in [0...nodesMatchingKeys.length]
+      if nodesToChange.indexOf(nodesMatchingKeys[i]) < 0
+        nodesToChange.push(nodesMatchingKeys[i])
   else
     nodesToChange = [currentBody]
   return nodesToChange
