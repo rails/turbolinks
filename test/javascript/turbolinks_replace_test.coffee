@@ -277,3 +277,22 @@ suite 'Turbolinks.replace()', ->
       assert.equal @document.title, 'title'
       done()
     @Turbolinks.replace(doc, title: false)
+
+  test "doesn't run scripts twice", (done) ->
+    doc = """
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>new title</title>
+      </head>
+      <body new-attribute>
+        <div id="change">
+          <script>window.count = window.count + 1 || 1;</script>
+        </div>
+      </body>
+      </html>
+    """
+    @document.addEventListener 'page:partial-load', (event) =>
+      assert.equal @window.count, 1
+      done()
+    @Turbolinks.replace(doc, change: ['change'])
