@@ -3,6 +3,7 @@ cacheSize               = 10
 transitionCacheEnabled  = false
 requestCachingEnabled   = true
 progressBar             = null
+progressBarTimeout      = 400
 
 currentState            = null
 loadedAssets            = null
@@ -493,11 +494,14 @@ class ProgressBar
     document.head.removeChild(@styleElement)
 
   start: ->
+    window.setTimeout displayProgressBar, progressBarTimeout
+
     if @value > 0
       @_reset()
       @_reflow()
 
-    @advanceTo(5)
+    displayProgressBar = ->
+      @advanceTo(5)
 
   advanceTo: (value) ->
     if value > @value <= 100
