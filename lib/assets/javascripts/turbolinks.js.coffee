@@ -143,6 +143,9 @@ changePage = (title, body, csrfToken, options) ->
   if options.change
     nodesToChange = findNodes(currentBody, '[data-turbolinks-temporary]')
     nodesToChange.push(findNodesMatchingKeys(currentBody, options.change)...)
+    # filter duplicate nodes to avoid double processing changes
+    nodesToChange = nodesToChange.filter (item, pos) ->
+      nodesToChange.indexOf(item) == pos
   else
     nodesToChange = [currentBody]
 
