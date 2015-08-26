@@ -376,3 +376,23 @@ suite 'Turbolinks.replace()', ->
       assert.equal @window.count, 1 # using importNode before swapping the nodes would double-eval scripts in Chrome/Safari
       done()
     @Turbolinks.replace(doc, change: ['change'])
+
+  test "doesn't run scripts inside :permanent nodes", (done) ->
+    doc = """
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>title</title>
+      </head>
+      <body>
+        <div id="change">
+          new content
+        </div>
+      </body>
+      </html>
+    """
+    @document.addEventListener 'page:partial-load', =>
+      assert.equal @window.countPerm, 1
+      done()
+    @Turbolinks.replace(doc, change: ['change'])
+
