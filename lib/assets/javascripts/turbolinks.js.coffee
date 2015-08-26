@@ -203,9 +203,17 @@ onNodeRemoved = (node) ->
     jQuery(node).remove()
   triggerEvent(EVENTS.AFTER_REMOVE, node)
 
+withinPermanent = (element) ->
+  while element?
+    return true if element.hasAttribute && element.hasAttribute('data-turbolinks-permanent')
+    element = element.parentNode
+
+  return false
+
 executeScriptTags = (selector) ->
   scripts = document.body.querySelectorAll(selector)
   for script in scripts when script.type in ['', 'text/javascript']
+    continue if withinPermanent(script)
     copy = document.createElement 'script'
     copy.setAttribute attr.name, attr.value for attr in script.attributes
     copy.async = false unless script.hasAttribute 'async'
