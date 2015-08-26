@@ -104,6 +104,8 @@ fetchHistory = (cachedPage, options = {}) ->
   triggerEvent EVENTS.RESTORE
 
 cacheCurrentPage = ->
+  return if document.querySelector('[data-no-turbolinks-cache]')?
+  
   currentStateUrl = new ComponentUrl currentState.url
 
   pageCache[currentStateUrl.absolute] =
