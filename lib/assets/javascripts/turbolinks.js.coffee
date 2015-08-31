@@ -3,6 +3,7 @@ cacheSize               = 10
 transitionCacheEnabled  = false
 requestCachingEnabled   = true
 progressBar             = null
+rootSelector            = 'body'
 
 currentState            = null
 loadedAssets            = null
@@ -142,7 +143,7 @@ replace = (html, options = {}) ->
 
 changePage = (title, body, csrfToken, options) ->
   title = options.title ? title
-  currentBody = document.body
+  currentBody = document.querySelector(rootSelector)
 
   if options.change
     nodesToChange = findNodes(currentBody, '[data-turbolinks-temporary]')
@@ -162,7 +163,8 @@ changePage = (title, body, csrfToken, options) ->
       nodesToKeep.push(findNodesMatchingKeys(currentBody, options.keep)...) if options.keep
       swapNodes(body, removeDuplicates(nodesToKeep), keep: true)
 
-    document.body = body
+    currentBody.parentElement.replaceChild(body, currentBody)
+
     CSRFToken.update csrfToken if csrfToken?
     setAutofocusElement()
     changedNodes = [body]
@@ -208,7 +210,7 @@ onNodeRemoved = (node) ->
   triggerEvent(EVENTS.AFTER_REMOVE, node)
 
 executeScriptTags = (selector) ->
-  scripts = document.body.querySelectorAll(selector)
+  scripts = document.querySelector(rootSelector).querySelectorAll(selector)
   for script in scripts when script.type in ['', 'text/javascript']
     copy = document.createElement 'script'
     copy.setAttribute attr.name, attr.value for attr in script.attributes
@@ -327,9 +329,12 @@ processResponse = ->
     if doc and !assetsChanged doc
       return doc
 
+setRootSelector = (selector) ->
+  rootSelector = selector
+
 extractTitleAndBody = (doc) ->
   title = doc.querySelector 'title'
-  [ title?.textContent, doc.querySelector('body'), CSRFToken.get(doc).token ]
+  [ title?.textContent, doc.querySelector(rootSelector), CSRFToken.get(doc).token ]
 
 CSRFToken =
   get: (doc = document) ->
@@ -652,6 +657,7 @@ else
 # Public API
 #   Turbolinks.visit(url)
 #   Turbolinks.replace(html)
+#   Turbolinks.setRootSelector(selector)
 #   Turbolinks.pagesCached()
 #   Turbolinks.pagesCached(20)
 #   Turbolinks.cacheCurrentPage()
@@ -668,6 +674,7 @@ else
 @Turbolinks = {
   visit,
   replace,
+  setRootSelector,
   pagesCached,
   cacheCurrentPage,
   enableTransitionCache,
