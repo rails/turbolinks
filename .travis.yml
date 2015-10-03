@@ -8,7 +8,7 @@ before_install:
   - npm install
 
 rvm:
-  - 2.2
+  - 2.2.3
 
 sudo: false
 
