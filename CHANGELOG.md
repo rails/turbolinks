@@ -1,5 +1,11 @@
 ## Turbolinks (master)
 
+*   Drop support for `before_filter` / `after_filter`, as they are being
+    deprecated in Rails 5.1. See [these lines](http://git.io/vc6mW) for more
+    information about the change.
+
+    *Jon Moss*
+
 *   `Turbolinks.visit` and `Turbolinks.replace` accept a `title` option.
 
     *Guillaume Malette*

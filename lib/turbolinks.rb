@@ -14,9 +14,6 @@ module Turbolinks
       if base.respond_to?(:before_action)
         base.before_action :set_xhr_redirected_to, :set_request_method_cookie
         base.after_action :abort_xdomain_redirect
-      else
-        base.before_filter :set_xhr_redirected_to, :set_request_method_cookie
-        base.after_filter :abort_xdomain_redirect
       end
     end
   end
