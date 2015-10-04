@@ -1,5 +1,23 @@
 ## Turbolinks (master)
 
+*   The following changes were made to Travis CI testing:
+      1. Remove CI testing for all Ruby version except for the latest 2.2.x. release. Rails 5.0.0
+         will be compatible with Ruby version greater than 2.2.2 only.
+      2. Remove CI testing for EOL'd 4.0.x version of Rails. This version of Rails does not
+         receive security patches and isn't maintained anymore, so we shouldn't be supporting
+         people that are still running it.
+      3. Remove CI testing for 3.2.x versions of Rails. This major series will be deprecated very
+         soon, and we want to be looking forward not back.
+
+    *Jon Moss*
+
+
+*   Drop support for `before_filter` / `after_filter`, as they are being
+    deprecated in Rails 5.1. See [these lines](http://git.io/vc6mW) for more
+    information about the change.
+
+    *Jon Moss*
+
 *   `Turbolinks.visit` and `Turbolinks.replace` accept a `title` option.
 
     *Guillaume Malette*

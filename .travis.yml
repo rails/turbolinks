@@ -8,9 +8,6 @@ before_install:
   - npm install
 
 rvm:
-  - 1.9.3
-  - 2.0.0
-  - 2.1.7
   - 2.2.3
 
 sudo: false
@@ -20,17 +17,6 @@ script:
  - script/test
 
 gemfile:
-  - Gemfile.rails32
-  - Gemfile.rails40
-  - Gemfile.rails41
-  - Gemfile.rails42
-  - Gemfile.rails50
-
-matrix:
-  exclude:
-    - gemfile: Gemfile.rails50
-      rvm: 1.9.3
-    - gemfile: Gemfile.rails50
-      rvm: 2.0.0
-    - gemfile: Gemfile.rails50
-      rvm: 2.1.7
+  - gemfiles/rails_4_1.gemfile
+  - gemfiles/rails_4_2.gemfile
+  - gemfiles/rails_5_0.gemfile
