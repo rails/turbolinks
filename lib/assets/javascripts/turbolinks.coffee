@@ -1,6 +1,7 @@
 pageCache               = {}
 cacheSize               = 10
 transitionCacheEnabled  = false
+transitionCacheExpire   = true
 requestCachingEnabled   = true
 progressBar             = null
 progressBarDelay        = 400
@@ -52,14 +53,17 @@ fetch = (url, options = {}) ->
   else
     options.scroll ?= false if isPartialReplacement(options) and !url.hash
 
-  fetchReplacement url, options
+  if transitionCacheExpire or not cachedPage?
+    fetchReplacement url, options
 
 transitionCacheFor = (url) ->
   return if url is currentState.url
   cachedPage = pageCache[url]
   cachedPage if cachedPage and !cachedPage.transitionCacheDisabled
 
-enableTransitionCache = (enable = true) ->
+enableTransitionCache = (enable = true, options = {}) ->
+  options.expire ?= true
+  transitionCacheExpire = options.expire
   transitionCacheEnabled = enable
 
 disableRequestCaching = (disable = true) ->
