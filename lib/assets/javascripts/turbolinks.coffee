@@ -318,7 +318,7 @@ removeDuplicates = (array) ->
 
 popCookie = (name) ->
   value = document.cookie.match(new RegExp(name+"=(\\w+)"))?[1].toUpperCase() or ''
-  document.cookie = name + '=; expires=Thu, 01-Jan-70 00:00:01 GMT; path=/'
+  document.cookie = name + '=; path=/'
   value
 
 uniqueId = ->
