@@ -58,18 +58,23 @@ fetchReplacement = (url, onLoadFunction, showProgressBar = true) ->
   xhr.setRequestHeader 'Accept', 'text/html, application/xhtml+xml, application/xml'
   xhr.setRequestHeader 'X-XHR-Referer', referer
 
-  xhr.onload = ->
-    triggerEvent EVENTS.RECEIVE, url: url.absolute
+  handleError = -> document.location.href = url.absolute
 
-    if doc = processResponse()
-      reflectNewUrl url
-      reflectRedirectedUrl()
-      changePage extractTitleAndBody(doc)...
-      manuallyTriggerHashChangeForFirefox()
-      onLoadFunction?()
-      triggerEvent EVENTS.LOAD
-    else
-      document.location.href = crossOriginRedirect() or url.absolute
+  xhr.onload = ->
+    try
+      triggerEvent EVENTS.RECEIVE, url: url.absolute
+
+      if doc = processResponse()
+        reflectNewUrl url
+        reflectRedirectedUrl()
+        changePage extractTitleAndBody(doc)...
+        manuallyTriggerHashChangeForFirefox()
+        onLoadFunction?()
+        triggerEvent EVENTS.LOAD
+      else
+        document.location.href = crossOriginRedirect() or url.absolute
+    catch
+      handleError()
 
   if progressBar and showProgressBar
     xhr.onprogress = (event) =>
@@ -80,7 +85,7 @@ fetchReplacement = (url, onLoadFunction, showProgressBar = true) ->
       progressBar.advanceTo(percent)
 
   xhr.onloadend = -> xhr = null
-  xhr.onerror   = -> document.location.href = url.absolute
+  xhr.onerror   = handleError
 
   xhr.send()
 
