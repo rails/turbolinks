@@ -58,6 +58,14 @@ class RedirectController < TestController
     redirect_to '/path', turbolinks: true, flush: false
   end
 
+  def redirect_to_path_with_turbolinks_and_scroll_true
+    redirect_to '/path', turbolinks: true, scroll: true
+  end
+
+  def redirect_to_path_with_turbolinks_and_scroll_false
+    redirect_to '/path', turbolinks: true, scroll: false
+  end
+
   def redirect_via_turbolinks_to_url_string
     ActiveSupport::Deprecation.silence do
       redirect_via_turbolinks_to 'http://example.com'
@@ -193,6 +201,16 @@ class RedirectionTest < ActionController::TestCase
     assert_raises ArgumentError do
       @controller.redirect_to '/path', keep: :foo, flush: true
     end
+  end
+
+  def test_redirect_to_with_turbolinks_and_scroll_true
+    get :redirect_to_path_with_turbolinks_and_scroll_true
+    assert_turbolinks_visit 'http://test.host/path', '{"scroll":true}'
+  end
+
+  def test_redirect_to_with_turbolinks_and_scroll_false
+    get :redirect_to_path_with_turbolinks_and_scroll_false
+    assert_turbolinks_visit 'http://test.host/path', '{"scroll":false}'
   end
 
   def test_redirect_via_turbolinks_to_url_string

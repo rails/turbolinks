@@ -50,7 +50,7 @@ module Turbolinks
     private
       def _extract_turbolinks_options!(options)
         turbolinks = options.delete(:turbolinks)
-        options = options.extract!(:keep, :change, :append, :prepend, :flush).delete_if { |_, value| value.nil? }
+        options = options.extract!(:keep, :change, :append, :prepend, :flush, :scroll).delete_if { |_, value| value.nil? }
 
         raise ArgumentError, "cannot combine :keep and :flush options" if options[:keep] && options[:flush]
 
@@ -70,6 +70,7 @@ module Turbolinks
         js_options[:prepend] = Array(options[:prepend]) if options[:prepend]
         js_options[:keep] = Array(options[:keep]) if options[:keep]
         js_options[:flush] = true if options[:flush]
+        js_options[:scroll] = options[:scroll] unless options[:scroll].nil?
 
         ", #{js_options.to_json}" if js_options.present?
       end
