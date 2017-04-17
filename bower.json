@@ -1,0 +1,24 @@
+{
+  "name": "turbolinks",
+  "version": "2.5.2",
+  "homepage": "https://github.com/rails/turbolinks",
+  "authors": [
+    "Chris Wanstrath",
+    "Sam Stephenson",
+    "Josh Peek"
+  ],
+  "description": "Turbolinks makes following links in your web application faster (use with Rails Asset Pipeline)",
+  "main": "lib/assets/javascripts/turbolinks.js.coffee",
+  "keywords": [
+    "turbolinks",
+    "rails"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
