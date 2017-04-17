@@ -525,6 +525,7 @@ class ProgressBar
     @value = 0
     @content = ''
     @speed = 300
+    @delay = 400
     @opacity = originalOpacity
     @install()
 
@@ -553,7 +554,11 @@ class ProgressBar
       @_reset()
       @_reflow()
 
+    @startTime = Date.now()
     @advanceTo(5)
+
+  delayComplete: ->
+    Date.now() - @startTime > @delay
 
   advanceTo: (value) ->
     if value > @value <= 100
@@ -612,6 +617,7 @@ class ProgressBar
     result
 
   _updateStyle: (forceRepaint = false) ->
+    return unless @delayComplete() || forceRepaint
     @_changeContentToForceRepaint() if forceRepaint
     @styleElement.textContent = @_createCSSRule()
 
